@@ -1,0 +1,13 @@
+[
+  // DEBUG EXAMPLE
+  // {
+  //   "label": "Debug name",
+  //   "adapter": "CodeLLDB",
+  //   "request": "launch",
+  //   "build": {
+  //     "cwd": "$ZED_WORKTREE_ROOT",
+  //     "command": "make command"
+  //   },
+  //   "program": "$ZED_WORKTREE_ROOT/build/bin/file"
+  // }
+]

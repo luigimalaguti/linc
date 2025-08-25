@@ -1,0 +1,13 @@
+---
+Checks: >
+  -*
+WarningsAsErrors: ''
+HeaderFileExtensions:
+  - h
+ImplementationFileExtensions:
+  - c
+HeaderFilterRegex: './include/*'
+FormatStyle: file
+ExtraArgs:       []
+SystemHeaders:   false
+...

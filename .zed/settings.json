@@ -1,0 +1,23 @@
+{
+  "format_on_save": "off",
+  "tab_size": 4,
+  "languages": {
+    "JSON": {
+      "tab_size": 2
+    },
+    "JSONC": {
+      "tab_size": 2
+    },
+    "C": {
+      "tab_size": 4,
+      "format_on_save": "on"
+    },
+    "C++": {
+      "tab_size": 4,
+      "format_on_save": "on"
+    }
+  },
+  "file_types": {
+    "C": ["C", "H"]
+  }
+}

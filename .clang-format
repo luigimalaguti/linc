@@ -1,0 +1,31 @@
+---
+BasedOnStyle: Google
+IndentWidth: 4
+UseTab: Never
+ColumnLimit: 120
+
+AllowShortFunctionsOnASingleLine: Empty
+
+# IncludeBlocks: Preserve
+# SortIncludes: CaseSensitive
+SortIncludes: true
+IncludeBlocks: Regroup
+IncludeCategories:
+  - Regex: '^".*'
+    Priority: 1
+  - Regex: '^<.*'
+    Priority: 2
+
+NamespaceIndentation: All
+BreakBeforeBinaryOperators: NonAssignment
+AlignOperands: AlignAfterOperator
+DerivePointerAlignment: false
+PointerAlignment: Right
+BinPackArguments: false
+BinPackParameters: false
+InsertBraces: true
+InsertTrailingCommas: Wrapped
+QualifierAlignment: Custom
+QualifierOrder: ['inline', 'static', 'constexpr', 'const', 'volatile', 'type', 'restrict']
+ReferenceAlignment: Right
+...

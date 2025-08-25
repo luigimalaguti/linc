@@ -1,0 +1,18 @@
+[
+  {
+    "label": "Clean",
+    "command": "make clean"
+  },
+  {
+    "label": "Compile",
+    "command": "make compile tests"
+  },
+  {
+    "label": "Recompile",
+    "command": "make clean compile tests"
+  },
+  {
+    "label": "Run tests",
+    "command": "make run-tests"
+  }
+]
