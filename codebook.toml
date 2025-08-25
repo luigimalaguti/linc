@@ -1,0 +1,32 @@
+# List of dictionaries to use for spell checking
+# Default: ["en_us"]
+# Other options include: "en_gb", "es"
+dictionaries = ["en_us", "it"]
+
+# Custom allowlist of words to ignore (case-insensitive)
+# Codebook will add words here when you select "Add to dictionary"
+# Default: []
+words = ["aslog", "loginc", "linc"]
+
+# Words that should always be flagged as incorrect
+# Default: []
+flag_words = []
+
+# List of glob patterns for paths to ignore when spell checking
+# Default: []
+# Example: [".git/**/*"]
+ignore_paths = []
+
+# List of regex patterns to ignore when spell checking
+# Useful for domain-specific strings or patterns
+# Default: []
+# Example: [
+#     "^[ATCG]+$",             # DNA sequences
+#     "\\d{3}-\\d{2}-\\d{4}"   # Social Security Number format
+# ]
+ignore_patterns = []
+
+# Whether to use global configuration (project config only)
+# Set to false to completely ignore global settings
+# Default: true
+use_global = true
