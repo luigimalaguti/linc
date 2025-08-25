@@ -117,7 +117,7 @@ packages:
 
 .PHONY: unpackages
 unpackages:
-	sudo apt uninstall bear
+	sudo apt remove bear
 
 # Include dependency files for automatic dependency tracking.
 -include $(SRC_DEPS)
