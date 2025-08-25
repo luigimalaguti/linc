@@ -15,10 +15,10 @@ BIN_DIR := $(BUILD_DIR)/binaries
 
 BEAR_FILE ?= $(BUILD_DIR)/compile_commands.json
 
-MAIN_SOURCE := $(SRC_DIR)/main.c
-MAIN_OBJECT := $(OBJ_DIR)/$(MAIN_SOURCE:.c=.o)
-MAIN_TARGET := $(BIN_DIR)/$(SRC_DIR)/bin
-MAIN_DEPS := $(OBJ_DIR)/$(MAIN_SOURCE:.c=.d)
+# MAIN_SOURCE := $(SRC_DIR)/main.c
+# MAIN_OBJECT := $(OBJ_DIR)/$(MAIN_SOURCE:.c=.o)
+# MAIN_TARGET := $(BIN_DIR)/$(SRC_DIR)/bin
+# MAIN_DEPS := $(OBJ_DIR)/$(MAIN_SOURCE:.c=.d)
 
 SRC_SOURCES := $(shell find $(SRC_DIR) -name '*.c' -not -wholename '$(MAIN_SOURCE)')
 SRC_OBJECTS := $(patsubst %.c,$(OBJ_DIR)/%.o,$(SRC_SOURCES))
@@ -69,9 +69,9 @@ $(OBJ_DIR)/%.o: %.c
 	$(CCWRAP) $(CPPFLAGS) $(CFLAGS) $(DFLAGS) -c $< -o $@
 
 # Rules for building the final binaries. Linking object files into executables.
-$(MAIN_TARGET): $(MAIN_OBJECT) $(SRC_OBJECTS)
-	mkdir -p $(@D)
-	$(CCWRAP) $^ $(LDFLAGS) -o $@
+# $(MAIN_TARGET): $(MAIN_OBJECT) $(SRC_OBJECTS)
+# 	mkdir -p $(@D)
+# 	$(CCWRAP) $^ $(LDFLAGS) -o $@
 
 $(BIN_DIR)/$(TEST_DIR)/%: $(OBJ_DIR)/$(TEST_DIR)/%.o $(SRC_OBJECTS)
 	mkdir -p $(@D)
@@ -85,11 +85,11 @@ $(BIN_DIR)/$(TEST_DIR)/%: $(OBJ_DIR)/$(TEST_DIR)/%.o $(SRC_OBJECTS)
 all: compile tests
 
 .PHONY: compile
-compile: $(MAIN_TARGET)
+compile: $(MAIN_OBJECT) $(SRC_OBJECTS)
 
-.PHONY: run
-run: $(MAIN_TARGET)
-	./$<
+# .PHONY: run
+# run: $(MAIN_TARGET)
+# 	./$<
 
 .PHONY: tests
 tests: $(TEST_TARGETS)
