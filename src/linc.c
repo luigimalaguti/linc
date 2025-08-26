@@ -6,7 +6,7 @@
 #include <stdio.h>
 
 void linc_log(const char *module,
-              linc_level_t level,
+              enum linc_level level,
               const char *file,
               uint32_t line,
               const char *func,

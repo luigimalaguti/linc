@@ -23,14 +23,14 @@
 // Common Types
 // ==================================================
 
-typedef enum linc_level {
+enum linc_level {
     LINC_LEVEL_TRACE = 0,  // Lowest level, for detailed debugging information
     LINC_LEVEL_DEBUG = 1,  // Debugging information, useful for developers
     LINC_LEVEL_INFO = 2,   // General information about application state
     LINC_LEVEL_WARN = 3,   // Warning messages, indicating potential issues
     LINC_LEVEL_ERROR = 4,  // Error messages, indicating something went wrong
     LINC_LEVEL_FATAL = 5,  // Critical errors that cause the application to terminate
-} linc_level_t;
+};
 
 // ==================================================
 // APIs linc
@@ -56,7 +56,12 @@ typedef enum linc_level {
 #define FATAL_M(module, format, ...) \
     linc_log(module, LINC_LEVEL_FATAL, __FILE__, __LINE__, __func__, format, ##__VA_ARGS__)
 
-void linc_log(
-    const char *module, linc_level_t level, const char *file, uint32_t line, const char *func, const char *format, ...);
+void linc_log(const char *module,
+              enum linc_level level,
+              const char *file,
+              uint32_t line,
+              const char *func,
+              const char *format,
+              ...);
 
 #endif  // LINC_INCLUDE_LINC_H_
