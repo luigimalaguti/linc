@@ -7,8 +7,16 @@
 #include <stdlib.h>
 #include <string.h>
 
+// ==================================================
+// Global Variables
+// ==================================================
+
 static struct linc linc_global;
 static pthread_once_t linc_once_init = PTHREAD_ONCE_INIT;
+
+// ==================================================
+// Private Functions
+// ==================================================
 
 static int linc_modules_check(const char *module_name, struct linc_module *modules, size_t count) {
     if (module_name == NULL || modules == NULL) {
@@ -22,6 +30,10 @@ static int linc_modules_check(const char *module_name, struct linc_module *modul
     return -1;
 }
 
+// ==================================================
+// State Management
+// ==================================================
+
 static void linc_shutdown(void) {}
 
 static void linc_bootstrap(void) {
@@ -34,6 +46,10 @@ static void linc_bootstrap(void) {
 
     atexit(linc_shutdown);
 }
+
+// ==================================================
+// Public Functions
+// ==================================================
 
 void linc_log(const char *module,
               enum linc_level level,
