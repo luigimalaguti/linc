@@ -9,6 +9,12 @@
 // Common Macros
 // ==================================================
 
+#if defined(__GNUC__)
+#define LINC_ATSART __attribute__((constructor))
+#else
+#define LINC_ATSART
+#endif
+
 #define LINC_COLOR_RESET "\x1b[0m"
 #define LINC_COLOR_BOLD "\x1b[1m"
 #define LINC_COLOR_DIM "\x1b[2m"

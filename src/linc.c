@@ -12,7 +12,13 @@
 // ==================================================
 
 static struct linc linc_global;
+
+#if !defined(__GNUC__)
 static pthread_once_t linc_once_init = PTHREAD_ONCE_INIT;
+#define LINC_BOOTSTRAP(pthread_once, routine) pthread_once((pthread_once), (routine))
+#else
+#define LINC_BOOTSTRAP(pthread_once, routine)
+#endif
 
 // ==================================================
 // Private Functions
@@ -36,6 +42,7 @@ static int linc_modules_check(const char *module_name, struct linc_module *modul
 
 static void linc_shutdown(void) {}
 
+LINC_ATSART
 static void linc_bootstrap(void) {
     memset(&linc_global, 0, sizeof(linc_global));
 
@@ -58,7 +65,7 @@ void linc_log(const char *module,
               const char *func,
               const char *format,
               ...) {
-    pthread_once(&linc_once_init, linc_bootstrap);
+    LINC_BOOTSTRAP(&linc_once_init, linc_bootstrap);
 
     const char *module_name = module == NULL ? LINC_MODULES_DEFAULT_NAME : module;
     int module_index = linc_modules_check(module_name, linc_global.modules_list, linc_global.modules_count);
