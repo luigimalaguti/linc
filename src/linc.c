@@ -84,7 +84,8 @@ void linc_log(const char *module,
     vsnprintf(message, sizeof(message), format, args);
     va_end(args);
 
-    printf("[ %s ] [ %-5s ] [ %016" PRIxPTR " ] [ %s ] %s:%" PRIu32 " %s: %s\n",
+    printf("[ %s ] [ %-5s ] [ %016" PRIxPTR " ] [ %-" LINC_NUM_TO_STR(LINC_MODULES_NAME_LENGTH) "s ] %s:%" PRIu32
+                                                                                                " %s: %s\n",
            timestamp,
            level_strings[level],
            thread_id,

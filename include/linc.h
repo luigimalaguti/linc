@@ -9,6 +9,9 @@
 // Common Macros
 // ==================================================
 
+#define LINC_NUM_STRINGIFY(number) #number
+#define LINC_NUM_TO_STR(number) LINC_NUM_STRINGIFY(number)
+
 #if defined(__GNUC__)
 #define LINC_ATSART __attribute__((constructor))
 #else
