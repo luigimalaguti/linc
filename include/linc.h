@@ -1,6 +1,8 @@
 #ifndef LINC_INCLUDE_LINC_H_
 #define LINC_INCLUDE_LINC_H_
 
+#include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 
 // ==================================================
@@ -23,6 +25,8 @@
 // Common Types
 // ==================================================
 
+#define LINC_LEVEL_DEFAULT 2  // Default log level
+
 enum linc_level {
     LINC_LEVEL_TRACE = 0,  // Lowest level, for detailed debugging information
     LINC_LEVEL_DEBUG = 1,  // Debugging information, useful for developers
@@ -30,6 +34,29 @@ enum linc_level {
     LINC_LEVEL_WARN = 3,   // Warning messages, indicating potential issues
     LINC_LEVEL_ERROR = 4,  // Error messages, indicating something went wrong
     LINC_LEVEL_FATAL = 5,  // Critical errors that cause the application to terminate
+};
+
+// ==================================================
+// Modules Configuration
+// ==================================================
+
+#define LINC_MODULES_DEFAULT_NAME "main"  // Default module name
+#define LINC_MODULES_MAX_NUMBER 8         // Maximum number of modules
+#define LINC_MODULES_NAME_LENGTH 16       // Maximum length for module names
+
+struct linc_module {
+    char name[LINC_MODULES_NAME_LENGTH];  // Name of the module
+    enum linc_level level;                // Minimum log level to output
+    bool enabled;                         // Whether the module is enabled
+};
+
+// ==================================================
+// Linc Configuration
+// ==================================================
+
+struct linc {
+    struct linc_module modules_list[LINC_MODULES_MAX_NUMBER];  // List of modules
+    size_t modules_count;                                      // Number of modules in the list
 };
 
 // ==================================================
