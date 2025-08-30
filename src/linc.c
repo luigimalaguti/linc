@@ -22,7 +22,7 @@ static pthread_once_t linc_once_init = PTHREAD_ONCE_INIT;
 #endif
 
 // ==================================================
-// Private Functions
+// Module Functions
 // ==================================================
 
 static int linc_modules_exists(const char *module_name, struct linc_module *modules, size_t count) {
@@ -55,6 +55,10 @@ static int linc_modules_check_level(const char *module_name, enum linc_level lev
     }
     return 0;
 }
+
+// ==================================================
+// Sink Functions
+// ==================================================
 
 static const char *linc_level_string(enum linc_level level) {
     switch (level) {
@@ -133,7 +137,7 @@ static void linc_bootstrap(void) {
 }
 
 // ==================================================
-// Public Functions
+// Client Functions
 // ==================================================
 
 void linc_log(const char *module,
