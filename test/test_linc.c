@@ -36,11 +36,16 @@ int main(void) {
     INFO_M("not_existing", "%s", "Log from INFO_M");
     linc_log("not_existing", LINC_LEVEL_INFO, "test/test_linc.c", 37, "main", "%s", "Log from linc_log");
 
+    // These logs should not appear in the output
+    // WHY -> Because the level is invalid
+    linc_log("main", LINC_LEVEL_INHERIT, "test/test_linc.c", 41, "main", "%s", "Log from linc_log");
+    linc_log("main", 6, "test/test_linc.c", 42, "main", "%s", "Log from linc_log");
+
     // These logs should appear in the output
     // WHY -> Because the default log level is INFO and default module is "main"
     INFO("%s", "Log from INFO");
     INFO_M("main", "%s", "Log from INFO_M");
-    linc_log("main", LINC_LEVEL_INFO, "test/test_linc.c", 43, "main", "%s", "Log from linc_log");
+    linc_log("main", LINC_LEVEL_INFO, "test/test_linc.c", 48, "main", "%s", "Log from linc_log");
 
     test_footer();
     return 0;
