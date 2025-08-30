@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/param.h>
+#include <time.h>
 
 // ==================================================
 // Global Variables
@@ -20,6 +21,41 @@ static pthread_once_t linc_once_init = PTHREAD_ONCE_INIT;
 #else
 #define LINC_BOOTSTRAP(pthread_once, routine)
 #endif
+
+static int64_t timestamp_offset = 0;
+
+// ==================================================
+// General Functions
+// ==================================================
+
+static int64_t linc_timestamp(void) {
+    struct timespec ts;
+#ifdef CLOCK_MONOTONIC_RAW
+    clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
+#else
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+#endif
+    int64_t mono = (int64_t)ts.tv_sec * 1000000000L + (int64_t)ts.tv_nsec;
+    return mono + timestamp_offset;
+}
+
+static char *linc_timestamp_string(int64_t timestamp, char *buffer, size_t size) {
+    time_t sec = timestamp / 1000000000L;
+    int16_t msec = (timestamp / 1000000L) % 1000;
+    struct tm utc_tm;
+    gmtime_r(&sec, &utc_tm);
+    snprintf(buffer,
+             size,
+             "%04" PRId16 "-%02" PRId16 "-%02" PRId16 " %02" PRId16 ":%02" PRId16 ":%02" PRId16 ".%03" PRId16,
+             utc_tm.tm_year + 1900,
+             utc_tm.tm_mon + 1,
+             utc_tm.tm_mday,
+             utc_tm.tm_hour,
+             utc_tm.tm_min,
+             utc_tm.tm_sec,
+             msec);
+    return buffer;
+}
 
 // ==================================================
 // Module Functions
@@ -107,7 +143,20 @@ static void linc_shutdown(void) {}
 
 LINC_ATSTART
 static void linc_bootstrap(void) {
+    // Clear global state
     memset(&linc_global, 0, sizeof(linc_global));
+
+    // Timestamp
+    struct timespec mono, real;
+#ifdef CLOCK_MONOTONIC_RAW
+    clock_gettime(CLOCK_MONOTONIC_RAW, &mono);
+#else
+    clock_gettime(CLOCK_MONOTONIC, &mono);
+#endif
+    clock_gettime(CLOCK_REALTIME, &real);
+    int64_t mono_ns = (int64_t)mono.tv_sec * 1000000000L + (int64_t)mono.tv_nsec;
+    int64_t real_ns = (int64_t)real.tv_sec * 1000000000L + (int64_t)real.tv_nsec;
+    timestamp_offset = real_ns - mono_ns;
 
     // Bootstrap default module
     linc_global.modules_count = 1;
@@ -133,6 +182,7 @@ static void linc_bootstrap(void) {
     // Bootstrap default settings
     linc_global.level = LINC_LEVEL_DEFAULT;
 
+    // At exit shutdown function
     atexit(linc_shutdown);
 }
 
@@ -149,13 +199,19 @@ void linc_log(const char *module,
               ...) {
     LINC_BOOTSTRAP(&linc_once_init, linc_bootstrap);
 
+    // Validate module and level
     const char *module_name = module == NULL ? LINC_MODULES_DEFAULT_NAME : module;
     int is_level_valid = linc_modules_check_level(module_name, level);
     if (is_level_valid < 0) {
         return;
     }
 
-    const char *timestamp = "0000-00-00 00:00:00.000";
+    // Temprorary code
+    // This code will be inserted into worker thread later
+
+    int64_t timestamp = linc_timestamp();
+    char timestamp_string[LINC_TIMESTAMP_LENGTH];
+    linc_timestamp_string(timestamp, timestamp_string, LINC_TIMESTAMP_LENGTH);
     uintptr_t thread_id = (uintptr_t)pthread_self();
 
     char message[1024];
@@ -166,7 +222,7 @@ void linc_log(const char *module,
 
     printf("[ %s ] [ %-5s ] [ %016" PRIxPTR " ] [ %-" LINC_NUM_TO_STR(LINC_MODULES_NAME_LENGTH) "s ] %s:%" PRIu32
                                                                                                 " %s: %s\n",
-           timestamp,
+           timestamp_string,
            linc_level_string(level),
            thread_id,
            module_name,

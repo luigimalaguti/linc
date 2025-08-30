@@ -30,6 +30,8 @@
 #define LINC_COLOR_CYAN "\x1b[96m"
 #define LINC_COLOR_WHITE "\x1b[97m"
 
+#define LINC_TIMESTAMP_LENGTH 24
+
 // ==================================================
 // Common Types
 // ==================================================
