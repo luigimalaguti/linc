@@ -97,6 +97,23 @@ struct linc_sink {
 };
 
 // ==================================================
+// Log Entry Configuration
+// ==================================================
+
+#define LINC_LOG_MESSAGE_MAX_LENGTH 512  // Maximum length for log messages
+
+struct linc_entry {
+    int64_t timestamp;                          // Timestamp in nanoseconds since epoch
+    enum linc_level level;                      // Log level of the entry
+    uintptr_t thread_id;                        // Thread ID where the log was generated
+    size_t module_index;                        // Index of the module in the modules list
+    const char *file;                           // Source file where the log was generated
+    uint32_t line;                              // Line number in the source file
+    const char *func;                           // Function name where the log was generated
+    char message[LINC_LOG_MESSAGE_MAX_LENGTH];  // Log message content
+};
+
+// ==================================================
 // Linc Configuration
 // ==================================================
 

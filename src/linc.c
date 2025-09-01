@@ -93,7 +93,7 @@ static int linc_modules_check_level(const char *module_name, enum linc_level lev
     if (is_module_enabled == false || is_level_valid == false) {
         return -1;
     }
-    return 0;
+    return module_index;
 }
 
 // ==================================================
@@ -194,6 +194,28 @@ static void linc_bootstrap(void) {
 // Client Functions
 // ==================================================
 
+static void linc_temp_worker(struct linc_entry *entry) {
+    // Build timestamp string from entry timestamp
+    char timestamp_string[LINC_TIMESTAMP_LENGTH];
+    if (linc_timestamp_string(entry->timestamp, timestamp_string, LINC_TIMESTAMP_LENGTH) < 0) {
+        strcpy(timestamp_string, LINC_TIMESTAMP_FALLBACK);
+    }
+
+    // Write log entry
+    printf("[ %s ] [ %-5s ] [ %016" PRIxPTR " ] [ %-" LINC_NUM_TO_STR(LINC_MODULES_NAME_LENGTH) "s ] %s:%" PRIu32
+                                                                                                " %s: %s\n",
+           timestamp_string,
+           linc_level_string(entry->level),
+           entry->thread_id,
+           linc_global.modules_list[entry->module_index].name,
+           entry->file,
+           entry->line,
+           entry->func,
+           entry->message);
+
+    free(entry);
+}
+
 void linc_log(const char *module,
               enum linc_level level,
               const char *file,
@@ -205,35 +227,33 @@ void linc_log(const char *module,
 
     // Validate module and level
     const char *module_name = module == NULL ? LINC_MODULES_DEFAULT_NAME : module;
-    int is_level_valid = linc_modules_check_level(module_name, level);
-    if (is_level_valid < 0) {
+    int module_index = linc_modules_check_level(module_name, level);
+    if (module_index < 0) {
         return;
     }
 
-    // Temprorary code
-    // This code will be inserted into worker thread later
-
-    int64_t timestamp = linc_timestamp();
-    char timestamp_string[LINC_TIMESTAMP_LENGTH];
-    if (linc_timestamp_string(timestamp, timestamp_string, LINC_TIMESTAMP_LENGTH) < 0) {
-        strcpy(timestamp_string, LINC_TIMESTAMP_FALLBACK);
+    // Create log entry
+    struct linc_entry *entry = (struct linc_entry *)malloc(sizeof(struct linc_entry));
+    if (entry == NULL) {
+        return;
     }
-    uintptr_t thread_id = (uintptr_t)pthread_self();
+    entry->timestamp = linc_timestamp();
+    entry->level = level;
+    entry->thread_id = (uintptr_t)pthread_self();
+    entry->module_index = module_index;
+    entry->file = file;
+    entry->line = line;
+    entry->func = func;
 
-    char message[1024];
+    // Format log message
     va_list args;
     va_start(args, format);
-    vsnprintf(message, sizeof(message), format, args);
+    vsnprintf(entry->message, sizeof(entry->message), format, args);
     va_end(args);
 
-    printf("[ %s ] [ %-5s ] [ %016" PRIxPTR " ] [ %-" LINC_NUM_TO_STR(LINC_MODULES_NAME_LENGTH) "s ] %s:%" PRIu32
-                                                                                                " %s: %s\n",
-           timestamp_string,
-           linc_level_string(level),
-           thread_id,
-           module_name,
-           file,
-           line,
-           func,
-           message);
+    // ==================================================
+    // Temprorary code
+    // This code will be inserted into worker thread later
+    // ==================================================
+    linc_temp_worker(entry);
 }
