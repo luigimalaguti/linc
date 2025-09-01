@@ -191,8 +191,19 @@ static void linc_bootstrap(void) {
 }
 
 // ==================================================
-// Client Functions
+// Worker Functions
 // ==================================================
+
+static int linc_sinks_check_level(struct linc_sink *sink, enum linc_level level) {
+    bool is_sink_enabled = sink->enabled == true;
+    enum linc_level sink_level = sink->level == LINC_LEVEL_INHERIT ? linc_global.level : sink->level;
+    bool is_level_valid = level >= sink_level;
+    bool is_sink_writer_valid = sink->entry.write != NULL;
+    if (is_sink_enabled == false || is_level_valid == false || is_sink_writer_valid == false) {
+        return -1;
+    }
+    return 0;
+}
 
 static void linc_temp_worker(struct linc_entry *entry) {
     // Build timestamp string from entry timestamp
@@ -201,20 +212,43 @@ static void linc_temp_worker(struct linc_entry *entry) {
         strcpy(timestamp_string, LINC_TIMESTAMP_FALLBACK);
     }
 
-    // Write log entry
-    printf("[ %s ] [ %-5s ] [ %016" PRIxPTR " ] [ %-" LINC_NUM_TO_STR(LINC_MODULES_NAME_LENGTH) "s ] %s:%" PRIu32
-                                                                                                " %s: %s\n",
-           timestamp_string,
-           linc_level_string(entry->level),
-           entry->thread_id,
-           linc_global.modules_list[entry->module_index].name,
-           entry->file,
-           entry->line,
-           entry->func,
-           entry->message);
+    // Iterate over sinks and write log entry
+    for (size_t i = 0; i < linc_global.sinks_count; i++) {
+        // Check sink level
+        struct linc_sink *sink = &linc_global.sinks_list[i];
+        if (linc_sinks_check_level(sink, entry->level) < 0) {
+            continue;
+        }
 
+        // Format log entry
+        char log_text_format[LINC_LOG_TEXT_MAX_LENGTH];
+        int written = snprintf(log_text_format,
+                               sizeof(log_text_format),
+                               LINC_LOG_TEXT_FORMAT,
+                               timestamp_string,
+                               linc_level_string(entry->level),
+                               entry->thread_id,
+                               linc_global.modules_list[entry->module_index].name,
+                               entry->file,
+                               entry->line,
+                               entry->func,
+                               entry->message);
+        if (written < 0) {
+            strcpy(log_text_format, LINC_LOG_TEXT_FALLBACK);
+            written = strlen(log_text_format);
+        }
+
+        // Write log entry to sink
+        sink->entry.write(sink->entry.data, log_text_format, written);
+    }
+
+    // Free entry
     free(entry);
 }
+
+// ==================================================
+// Client Functions
+// ==================================================
 
 void linc_log(const char *module,
               enum linc_level level,

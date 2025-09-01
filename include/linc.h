@@ -30,8 +30,25 @@
 #define LINC_COLOR_CYAN "\x1b[96m"
 #define LINC_COLOR_WHITE "\x1b[97m"
 
-#define LINC_TIMESTAMP_LENGTH 24
-#define LINC_TIMESTAMP_FALLBACK "0000-00-00 00:00:00.000"
+#define LINC_TIMESTAMP_LENGTH 24                           // Length of timestamp string "YYYY-MM-DD HH:MM:SS.mmm"
+#define LINC_TIMESTAMP_FALLBACK "0000-00-00 00:00:00.000"  // Fallback timestamp string
+#define LINC_LOG_TEXT_LEVEL_LENGTH 5                       // Length of log level string
+#define LINC_LOG_TEXT_THREAD_ID_LENGTH 16                  // Length of thread ID string
+#define LINC_LOG_TEXT_FILE_LENGTH 64                       // Length of file name string
+#define LINC_LOG_TEXT_FUNC_LENGTH 64                       // Length of function name string
+#define LINC_LOG_TEXT_LINE_LENGTH 10                       // Length of line number string
+#define LINC_LOG_TEXT_CHAR_SET 24                          // Extra characters for formatting, e.g., [ ], spaces, etc.
+
+#define LINC_LOG_TEXT_MAX_LENGTH                                                                                    \
+    (LINC_TIMESTAMP_LENGTH + LINC_LOG_TEXT_LEVEL_LENGTH + LINC_LOG_TEXT_THREAD_ID_LENGTH + LINC_MODULES_NAME_LENGTH \
+     + LINC_LOG_TEXT_FILE_LENGTH + LINC_LOG_TEXT_LINE_LENGTH + LINC_LOG_TEXT_FUNC_LENGTH                            \
+     + LINC_LOG_MESSAGE_MAX_LENGTH)
+#define LINC_LOG_TEXT_FORMAT                                                                                          \
+    "[ %s ] [ %-" LINC_NUM_TO_STR(LINC_LOG_TEXT_LEVEL_LENGTH) "s ] [ %0" LINC_NUM_TO_STR(                             \
+        LINC_LOG_TEXT_THREAD_ID_LENGTH) PRIxPTR " ] [ %-" LINC_NUM_TO_STR(LINC_MODULES_NAME_LENGTH) "s ] %s:%" PRIu32 \
+                                                                                                    " %s: %s\n"
+
+#define LINC_LOG_TEXT_FALLBACK "[ LINC ERROR ] Internal logging error occurred\n"
 
 // ==================================================
 // Common Types
