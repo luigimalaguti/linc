@@ -45,10 +45,10 @@ CCWRAP := $(CC)
 endif
 
 # Preprocessor flags
-CPPFLAGS ?= -D_POSIX_C_SOURCE=200809L -I$(INC_DIR)
+CPPFLAGS ?= -D_POSIX_C_SOURCE=199309L -I$(INC_DIR)
 
 # Compiler flags
-CFLAGS ?= -Wall -Wextra -Werror -std=c11 -pedantic-errors
+CFLAGS ?= -Wall -Wextra -Werror -std=c99 -pedantic-errors
 
 # Linker flags
 LDFLAGS ?= -lpthread -lm
