@@ -31,6 +31,7 @@
 #define LINC_COLOR_WHITE "\x1b[97m"
 
 #define LINC_TIMESTAMP_LENGTH 24
+#define LINC_TIMESTAMP_FALLBACK "0000-00-00 00:00:00.000"
 
 // ==================================================
 // Common Types

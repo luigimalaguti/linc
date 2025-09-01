@@ -39,22 +39,26 @@ static int64_t linc_timestamp(void) {
     return mono + timestamp_offset;
 }
 
-static char *linc_timestamp_string(int64_t timestamp, char *buffer, size_t size) {
+static int linc_timestamp_string(int64_t timestamp, char *buffer, size_t size) {
     time_t sec = timestamp / 1000000000L;
     int16_t msec = (timestamp / 1000000L) % 1000;
     struct tm utc_tm;
     gmtime_r(&sec, &utc_tm);
-    snprintf(buffer,
-             size,
-             "%04" PRId16 "-%02" PRId16 "-%02" PRId16 " %02" PRId16 ":%02" PRId16 ":%02" PRId16 ".%03" PRId16,
-             utc_tm.tm_year + 1900,
-             utc_tm.tm_mon + 1,
-             utc_tm.tm_mday,
-             utc_tm.tm_hour,
-             utc_tm.tm_min,
-             utc_tm.tm_sec,
-             msec);
-    return buffer;
+    int result =
+        snprintf(buffer,
+                 size,
+                 "%04" PRId16 "-%02" PRId16 "-%02" PRId16 " %02" PRId16 ":%02" PRId16 ":%02" PRId16 ".%03" PRId16,
+                 utc_tm.tm_year + 1900,
+                 utc_tm.tm_mon + 1,
+                 utc_tm.tm_mday,
+                 utc_tm.tm_hour,
+                 utc_tm.tm_min,
+                 utc_tm.tm_sec,
+                 msec);
+    if (result < 0) {
+        return -1;
+    }
+    return 0;
 }
 
 // ==================================================
@@ -211,7 +215,9 @@ void linc_log(const char *module,
 
     int64_t timestamp = linc_timestamp();
     char timestamp_string[LINC_TIMESTAMP_LENGTH];
-    linc_timestamp_string(timestamp, timestamp_string, LINC_TIMESTAMP_LENGTH);
+    if (linc_timestamp_string(timestamp, timestamp_string, LINC_TIMESTAMP_LENGTH) < 0) {
+        strcpy(timestamp_string, LINC_TIMESTAMP_FALLBACK);
+    }
     uintptr_t thread_id = (uintptr_t)pthread_self();
 
     char message[1024];
