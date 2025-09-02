@@ -174,4 +174,10 @@ void linc_log(const char *module,
               const char *format,
               ...);
 
+int linc_set_level(enum linc_level level);
+
+int linc_add_module(const char *name);
+int linc_set_module_enabled(const char *name, bool enabled);
+int linc_set_module_level(const char *name, enum linc_level level);
+
 #endif  // LINC_INCLUDE_LINC_H_

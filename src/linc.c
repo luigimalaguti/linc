@@ -292,3 +292,69 @@ void linc_log(const char *module,
     // ==================================================
     linc_temp_worker(entry);
 }
+
+int linc_set_level(enum linc_level level) {
+    LINC_BOOTSTRAP(&linc_once_init, linc_bootstrap);
+
+    if (level < LINC_LEVEL_TRACE || level > LINC_LEVEL_FATAL) {
+        return -1;
+    }
+
+    linc_global.level = level;
+    return 0;
+}
+
+int linc_add_module(const char *name) {
+    LINC_BOOTSTRAP(&linc_once_init, linc_bootstrap);
+
+    if (name == NULL || strlen(name) == 0 || strlen(name) >= LINC_MODULES_NAME_LENGTH) {
+        return -1;
+    }
+    if (linc_global.modules_count >= LINC_MODULES_MAX_NUMBER) {
+        return -1;
+    }
+    if (linc_modules_exists(name, linc_global.modules_list, linc_global.modules_count) >= 0) {
+        return -1;
+    }
+
+    size_t module_index = linc_global.modules_count;
+    strcpy(linc_global.modules_list[module_index].name, name);
+    linc_global.modules_list[module_index].enabled = true;
+    linc_global.modules_list[module_index].level = LINC_LEVEL_INHERIT;
+    linc_global.modules_count++;
+
+    return module_index;
+}
+
+int linc_set_module_enabled(const char *name, bool enabled) {
+    LINC_BOOTSTRAP(&linc_once_init, linc_bootstrap);
+
+    if (name == NULL || strlen(name) == 0 || strlen(name) >= LINC_MODULES_NAME_LENGTH) {
+        return -1;
+    }
+    int module_index = linc_modules_exists(name, linc_global.modules_list, linc_global.modules_count);
+    if (module_index < 0) {
+        return -1;
+    }
+
+    linc_global.modules_list[module_index].enabled = enabled;
+    return 0;
+}
+
+int linc_set_module_level(const char *name, enum linc_level level) {
+    LINC_BOOTSTRAP(&linc_once_init, linc_bootstrap);
+
+    if (name == NULL || strlen(name) == 0 || strlen(name) >= LINC_MODULES_NAME_LENGTH) {
+        return -1;
+    }
+    if (level < LINC_LEVEL_TRACE || level > LINC_LEVEL_FATAL) {
+        return -1;
+    }
+    int module_index = linc_modules_exists(name, linc_global.modules_list, linc_global.modules_count);
+    if (module_index < 0) {
+        return -1;
+    }
+
+    linc_global.modules_list[module_index].level = level;
+    return 0;
+}
