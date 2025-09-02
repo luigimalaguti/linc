@@ -17,6 +17,8 @@ Questo file contiene riferimenti a risorse utili per il progetto. Le risorse son
     - [Compilazione in C](https://www.youtube.com/watch?v=uprHU187py8)
     - [Headers in C](https://www.youtube.com/watch?v=rEYpBBVdC4Y)
     - [A cosa servono i Makefile?](https://www.youtube.com/watch?v=UjL6kW3aRVA)
+- [Canale di Salvatore Sanfilippo](https://www.youtube.com/@antirez)
+    - [Corso di programmazione in C](https://www.youtube.com/playlist?list=PLrEMgOSrS_3cFJpM2gdw8EGFyRBZOyAKY)
 - [Grafana Alloy, NEW log + metric collector replaces everything!](https://www.youtube.com/watch?v=E654LPrkCjo)
 - [Why Some Projects Use Multiple Programming Languages](https://www.youtube.com/watch?v=XJC5WB2Bwrc)
 
