@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 // ==================================================
 // Global Variables
@@ -265,7 +266,7 @@ void linc_log(const char *module,
     }
 
     // Create log entry
-    struct linc_entry *entry = (struct linc_entry *)malloc(sizeof(struct linc_entry));
+    struct linc_entry *entry = (struct linc_entry *)calloc(1, sizeof(struct linc_entry));
     if (entry == NULL) {
         return;
     }
@@ -280,11 +281,13 @@ void linc_log(const char *module,
     // Format log message
     va_list args;
     va_start(args, format);
-    vsnprintf(entry->message, sizeof(entry->message), format, args);
+    if (format != NULL) {
+        vsnprintf(entry->message, sizeof(entry->message), format, args);
+    }
     va_end(args);
 
     // ==================================================
-    // Temprorary code
+    // Temporary code
     // This code will be inserted into worker thread later
     // ==================================================
     linc_temp_worker(entry);
