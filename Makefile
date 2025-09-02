@@ -98,6 +98,10 @@ tests: $(TEST_TARGETS)
 run-tests: $(TEST_TARGETS)
 	for test in $^; do ./$$test || exit 1; done
 
+.PHONY: run-%
+run-%: $(BIN_DIR)/$(TEST_DIR)/%
+	./$<
+
 # Rule to print the value of a variable.
 .PHONY: vars-%
 vars-%:
