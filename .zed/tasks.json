@@ -12,7 +12,11 @@
     "command": "make clean compile tests"
   },
   {
-    "label": "Run tests",
+    "label": "Run all tests",
     "command": "make run-tests"
+  },
+  {
+    "label": "Run file-based test",
+    "command": "make run-$ZED_STEM"
   }
 ]

@@ -1,13 +1,9 @@
 [
-  // DEBUG EXAMPLE
-  // {
-  //   "label": "Debug name",
-  //   "adapter": "CodeLLDB",
-  //   "request": "launch",
-  //   "build": {
-  //     "cwd": "$ZED_WORKTREE_ROOT",
-  //     "command": "make command"
-  //   },
-  //   "program": "$ZED_WORKTREE_ROOT/build/bin/file"
-  // }
+  {
+    "label": "Debug file-based",
+    "adapter": "CodeLLDB",
+    "request": "launch",
+    "build": "Run file-based test",
+    "program": "$ZED_WORKTREE_ROOT/build/binaries/$ZED_RELATIVE_DIR/$ZED_STEM"
+  }
 ]

@@ -142,7 +142,18 @@ static int sink_stdout_flush(void *data) {
 // State Management
 // ==================================================
 
-static void linc_shutdown(void) {}
+static void linc_shutdown(void) {
+    // Close all sinks
+    for (size_t i = 0; i < linc_global.sinks_count; i++) {
+        struct linc_sink *sink = &linc_global.sinks_list[i];
+        if (sink->enabled == true && sink->entry.close != NULL) {
+            sink->entry.close(sink->entry.data);
+        }
+    }
+
+    // Clear global state
+    memset(&linc_global, 0, sizeof(linc_global));
+}
 
 LINC_ATSTART
 static void linc_bootstrap(void) {
@@ -356,5 +367,82 @@ int linc_set_module_level(const char *name, enum linc_level level) {
     }
 
     linc_global.modules_list[module_index].level = level;
+    return 0;
+}
+
+int linc_add_sink(struct linc_sink_entry entry) {
+    LINC_BOOTSTRAP(&linc_once_init, linc_bootstrap);
+
+    if (entry.open == NULL || entry.close == NULL || entry.write == NULL || entry.flush == NULL) {
+        return -1;
+    }
+    if (linc_global.sinks_count >= LINC_SINKS_MAX_NUMBER) {
+        return -1;
+    }
+    if (entry.open(entry.data) < 0) {
+        return -1;
+    }
+
+    size_t sink_index = linc_global.sinks_count;
+    linc_global.sinks_list[sink_index].enabled = true;
+    linc_global.sinks_list[sink_index].level = LINC_LEVEL_INHERIT;
+    linc_global.sinks_list[sink_index].formatter = LINC_FORMAT_TEXT;
+    linc_global.sinks_list[sink_index].color_mode = LINC_COLOR_MODE_AUTO;
+    linc_global.sinks_list[sink_index].entry = entry;
+    linc_global.sinks_count++;
+
+    return sink_index;
+}
+
+int linc_set_sink_enabled(size_t index, bool enabled) {
+    LINC_BOOTSTRAP(&linc_once_init, linc_bootstrap);
+
+    if (index >= linc_global.sinks_count) {
+        return -1;
+    }
+
+    linc_global.sinks_list[index].enabled = enabled;
+    return 0;
+}
+
+int linc_set_sink_level(size_t index, enum linc_level level) {
+    LINC_BOOTSTRAP(&linc_once_init, linc_bootstrap);
+
+    if (index >= linc_global.sinks_count) {
+        return -1;
+    }
+    if (level < LINC_LEVEL_INHERIT || level > LINC_LEVEL_FATAL) {
+        return -1;
+    }
+
+    linc_global.sinks_list[index].level = level;
+    return 0;
+}
+
+int linc_set_sink_color_mode(size_t index, enum linc_color_mode color_mode) {
+    LINC_BOOTSTRAP(&linc_once_init, linc_bootstrap);
+
+    if (index >= linc_global.sinks_count) {
+        return -1;
+    }
+    if (color_mode < LINC_COLOR_MODE_AUTO || color_mode > LINC_COLOR_MODE_ALWAYS) {
+        return -1;
+    }
+
+    linc_global.sinks_list[index].color_mode = color_mode;
+    return 0;
+}
+
+int linc_set_sink_formatter(size_t index, enum linc_formatter formatter) {
+    LINC_BOOTSTRAP(&linc_once_init, linc_bootstrap);
+
+    if (index >= linc_global.sinks_count) {
+        return -1;
+    }
+    if (formatter < LINC_FORMAT_TEXT || formatter > LINC_FORMAT_JSON) {
+        return -1;
+    }
+
+    linc_global.sinks_list[index].formatter = formatter;
     return 0;
 }

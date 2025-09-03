@@ -180,4 +180,10 @@ int linc_add_module(const char *name);
 int linc_set_module_enabled(const char *name, bool enabled);
 int linc_set_module_level(const char *name, enum linc_level level);
 
+int linc_add_sink(struct linc_sink_entry entry);
+int linc_set_sink_enabled(size_t index, bool enabled);
+int linc_set_sink_level(size_t index, enum linc_level level);
+int linc_set_sink_color_mode(size_t index, enum linc_color_mode color_mode);
+int linc_set_sink_formatter(size_t index, enum linc_formatter formatter);
+
 #endif  // LINC_INCLUDE_LINC_H_
