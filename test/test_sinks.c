@@ -261,11 +261,11 @@ void test_set_invalid_formatter(void) {
     assert(result == -1);
 
     result = 0;
-    result = linc_set_sink_color_mode(1, -1);
+    result = linc_set_sink_formatter(1, -1);
     assert(result == -1);
 
     result = 0;
-    result = linc_set_sink_color_mode(1, 3);
+    result = linc_set_sink_formatter(1, 3);
     assert(result == -1);
 
     test_group_footer();
