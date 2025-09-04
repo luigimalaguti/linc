@@ -1,6 +1,5 @@
 #include "linc.h"
 
-#include <inttypes.h>
 #include <pthread.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -231,6 +230,11 @@ static void linc_temp_worker(struct linc_entry *entry) {
         }
 
         // Format log entry
+        const char *file = entry->file == NULL ? "unknown" : entry->file;
+        const char *func = entry->func == NULL ? "unknown" : entry->func;
+        if (strlen(entry->message) == 0) {
+            strcpy(entry->message, "(no message)");
+        }
         char log_text_format[LINC_LOG_TEXT_MAX_LENGTH];
         int written = snprintf(log_text_format,
                                sizeof(log_text_format),
@@ -239,9 +243,9 @@ static void linc_temp_worker(struct linc_entry *entry) {
                                linc_level_string(entry->level),
                                entry->thread_id,
                                linc_global.modules_list[entry->module_index].name,
-                               entry->file,
+                               file,
                                entry->line,
-                               entry->func,
+                               func,
                                entry->message);
         if (written < 0) {
             strcpy(log_text_format, LINC_LOG_TEXT_FALLBACK);

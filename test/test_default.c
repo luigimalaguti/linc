@@ -164,17 +164,19 @@ void test_null_parameters(void) {
     const char *title = "Testing NULL parameters. SHOULD handle gracefully";
     test_group_header(title);
 
-    INFO(NULL, NULL);
-    INFO_M("main", NULL, NULL);
+    // INFO(NULL, NULL);  // -> Compiler error: Too many arguments for format
+    // INFO_M("main", NULL, NULL); // -> Compiler error: Too many arguments for format
     linc_log("main", LINC_LEVEL_INFO, __FILE__, __LINE__, __func__, NULL);
-    linc_log("main", LINC_LEVEL_INFO, __FILE__, __LINE__, __func__, NULL, NULL);
+    // linc_log("main", LINC_LEVEL_INFO, __FILE__, __LINE__, __func__, NULL, NULL); // -> Compiler error: Too many
+    // arguments for format
 
     INFO("%s", "");
-    INFO("%s", NULL);
+    // INFO("%s", NULL); // -> Compiler error: '%s' directive argument is null
     INFO_M("main", "%s", "");
-    INFO_M("main", "%s", NULL);
+    // INFO_M("main", "%s", NULL); // -> Compiler error: '%s' directive argument is null
     linc_log("main", LINC_LEVEL_INFO, __FILE__, __LINE__, __func__, "%s", "");
-    linc_log("main", LINC_LEVEL_INFO, __FILE__, __LINE__, __func__, "%s", NULL);
+    // linc_log("main", LINC_LEVEL_INFO, __FILE__, __LINE__, __func__, "%s", NULL); // -> Compiler error: '%s' directive
+    // argument is null
 
     linc_log("main", LINC_LEVEL_INFO, NULL, 0, NULL, "Message with NULL file/func and line 0");
     linc_log("main", LINC_LEVEL_INFO, NULL, -1, NULL, "Message with NULL file/func and line -1");

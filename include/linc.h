@@ -1,6 +1,7 @@
 #ifndef LINC_INCLUDE_LINC_H_
 #define LINC_INCLUDE_LINC_H_
 
+#include <inttypes.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -14,8 +15,10 @@
 
 #if defined(__GNUC__)
 #define LINC_ATSTART __attribute__((constructor))
+#define LINC_PRINT_FMT(fmt, args) __attribute__((format(printf, fmt, args)))
 #else
 #define LINC_ATSTART
+#define LINC_PRINT_FMT(fmt, args)
 #endif
 
 #define LINC_COLOR_RESET "\x1b[0m"
@@ -172,7 +175,7 @@ void linc_log(const char *module,
               uint32_t line,
               const char *func,
               const char *format,
-              ...);
+              ...) LINC_PRINT_FMT(6, 7);
 
 int linc_set_level(enum linc_level level);
 
