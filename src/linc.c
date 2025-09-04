@@ -129,7 +129,8 @@ static int sink_stdout_close(void *data) {
 
 static int sink_stdout_write(void *data, const char *buffer, size_t length) {
     FILE *output_file = (FILE *)data;
-    return fwrite(buffer, sizeof(char), length, output_file);
+    size_t written = fwrite(buffer, sizeof(char), length, output_file);
+    return written == length ? 0 : -1;
 }
 
 static int sink_stdout_flush(void *data) {
