@@ -194,13 +194,6 @@ void test_set_invalid_level_module(void) {
     linc_log("testing", LINC_LEVEL_TRACE, __FILE__, __LINE__, __func__, "%s", "Log from linc_log");
 
     result = 0;
-    result = linc_set_module_level("testing", LINC_LEVEL_INHERIT);
-    assert(result == -1);
-
-    TRACE_M("testing", "%s", "Log from TRACE_M");
-    linc_log("testing", LINC_LEVEL_TRACE, __FILE__, __LINE__, __func__, "%s", "Log from linc_log");
-
-    result = 0;
     result = linc_set_module_level("testing", -2);
     assert(result == -1);
 
@@ -221,7 +214,12 @@ void test_set_valid_level_module(void) {
     const char *title = "Testing valid level of new module. SHOULD print logs";
     test_group_header(title);
 
-    int result = linc_set_module_level("testing", LINC_LEVEL_TRACE);
+    int result = 0;
+    result = linc_set_module_level("testing", LINC_LEVEL_INHERIT);
+    assert(result == 0);
+
+    result = 0;
+    result = linc_set_module_level("testing", LINC_LEVEL_TRACE);
     assert(result == 0);
 
     TRACE_M("testing", "%s", "Log from TRACE_M");

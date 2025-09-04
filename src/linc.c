@@ -145,9 +145,8 @@ static void linc_shutdown(void) {
     // Close all sinks
     for (size_t i = 0; i < linc_global.sinks_count; i++) {
         struct linc_sink *sink = &linc_global.sinks_list[i];
-        if (sink->enabled == true && sink->entry.close != NULL) {
-            sink->entry.close(sink->entry.data);
-        }
+        sink->entry.flush(sink->entry.data);
+        sink->entry.close(sink->entry.data);
     }
 
     // Clear global state
@@ -250,6 +249,8 @@ static void linc_temp_worker(struct linc_entry *entry) {
         if (written < 0) {
             strcpy(log_text_format, LINC_LOG_TEXT_FALLBACK);
             written = strlen(log_text_format);
+        } else if ((size_t)written >= sizeof(log_text_format)) {
+            written = sizeof(log_text_format) - 1;
         }
 
         // Write log entry to sink
@@ -362,7 +363,7 @@ int linc_set_module_level(const char *name, enum linc_level level) {
     if (name == NULL || strlen(name) == 0 || strlen(name) >= LINC_MODULES_NAME_LENGTH) {
         return -1;
     }
-    if (level < LINC_LEVEL_TRACE || level > LINC_LEVEL_FATAL) {
+    if (level < LINC_LEVEL_INHERIT || level > LINC_LEVEL_FATAL) {
         return -1;
     }
     int module_index = linc_modules_exists(name, linc_global.modules_list, linc_global.modules_count);
