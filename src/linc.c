@@ -42,17 +42,16 @@ static int linc_timestamp_string(int64_t timestamp, char *buffer, size_t size) {
     int16_t msec = (timestamp / 1000000L) % 1000;
     struct tm utc_tm;
     gmtime_r(&sec, &utc_tm);
-    int result =
-        snprintf(buffer,
-                 size,
-                 "%04" PRId16 "-%02" PRId16 "-%02" PRId16 " %02" PRId16 ":%02" PRId16 ":%02" PRId16 ".%03" PRId16,
-                 utc_tm.tm_year + 1900,
-                 utc_tm.tm_mon + 1,
-                 utc_tm.tm_mday,
-                 utc_tm.tm_hour,
-                 utc_tm.tm_min,
-                 utc_tm.tm_sec,
-                 msec);
+    int result = snprintf(buffer,
+                          size,
+                          "%04d-%02d-%02d %02d:%02d:%02d.%03d",
+                          utc_tm.tm_year + 1900,
+                          utc_tm.tm_mon + 1,
+                          utc_tm.tm_mday,
+                          utc_tm.tm_hour,
+                          utc_tm.tm_min,
+                          utc_tm.tm_sec,
+                          msec);
     if (result < 0) {
         return -1;
     }
