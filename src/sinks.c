@@ -33,8 +33,12 @@ static int linc_sink_stderr_flush(void *data) {
 // ==================================================
 
 static int linc_check_name_sink(struct linc_sink_list *sinks, const char *name) {
+    if (name == NULL) {
+        return -1;
+    }
+
     size_t name_length = strnlen(name, LINC_DEFAULT_SINK_NAME_LENGTH + LINC_ZERO_CHAR_LENGTH);
-    if (name == NULL || name_length == 0 || name_length > LINC_DEFAULT_SINK_NAME_LENGTH) {
+    if (name_length == 0 || name_length > LINC_DEFAULT_SINK_NAME_LENGTH) {
         return -1;
     }
 
@@ -140,8 +144,12 @@ linc_sink linc_register_sink(const char *name,
 
 linc_sink linc_get_sink(const char *name) {
     struct linc_sink_list *sinks = linc_get_sinks();
+    if (name == NULL) {
+        return NULL;
+    }
+
     size_t name_length = strnlen(name, LINC_DEFAULT_SINK_NAME_LENGTH + LINC_ZERO_CHAR_LENGTH);
-    if (name == NULL || name_length == 0 || name_length > LINC_DEFAULT_SINK_NAME_LENGTH) {
+    if (name_length == 0 || name_length > LINC_DEFAULT_SINK_NAME_LENGTH) {
         return NULL;
     }
 

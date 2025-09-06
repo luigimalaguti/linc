@@ -8,8 +8,12 @@
 // ==================================================
 
 static int linc_check_name_module(struct linc_module_list *modules, const char *name) {
+    if (name == NULL) {
+        return -1;
+    }
+
     size_t name_length = strnlen(name, LINC_DEFAULT_MODULE_NAME_LENGTH + LINC_ZERO_CHAR_LENGTH);
-    if (name == NULL || name_length == 0 || name_length > LINC_DEFAULT_MODULE_NAME_LENGTH) {
+    if (name_length == 0 || name_length > LINC_DEFAULT_MODULE_NAME_LENGTH) {
         return -1;
     }
 
@@ -72,8 +76,12 @@ linc_module linc_register_module(const char *name, enum linc_level level, bool e
 
 linc_module linc_get_module(const char *name) {
     struct linc_module_list *modules = linc_get_modules();
+    if (name == NULL) {
+        return NULL;
+    }
+
     size_t name_length = strnlen(name, LINC_DEFAULT_MODULE_NAME_LENGTH + LINC_ZERO_CHAR_LENGTH);
-    if (name == NULL || name_length == 0 || name_length > LINC_DEFAULT_MODULE_NAME_LENGTH) {
+    if (name_length == 0 || name_length > LINC_DEFAULT_MODULE_NAME_LENGTH) {
         return NULL;
     }
 
