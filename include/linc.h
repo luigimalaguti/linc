@@ -1,63 +1,13 @@
-#ifndef LINC_INCLUDE_LINC_H_
-#define LINC_INCLUDE_LINC_H_
+#ifndef LINC_INCLUDE_LINC_H
+#define LINC_INCLUDE_LINC_H
 
-#include <inttypes.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
 // ==================================================
-// Common Macros
+// Structures and Enums
 // ==================================================
-
-#define LINC_NUM_STRINGIFY(number) #number
-#define LINC_NUM_TO_STR(number) LINC_NUM_STRINGIFY(number)
-
-#if defined(__GNUC__)
-#define LINC_ATSTART __attribute__((constructor))
-#define LINC_PRINT_FMT(fmt, args) __attribute__((format(printf, fmt, args)))
-#else
-#define LINC_ATSTART
-#define LINC_PRINT_FMT(fmt, args)
-#endif
-
-#define LINC_COLOR_RESET "\x1b[0m"
-#define LINC_COLOR_BOLD "\x1b[1m"
-#define LINC_COLOR_DIM "\x1b[2m"
-#define LINC_COLOR_NORMAL "\x1b[22m"
-#define LINC_COLOR_RED "\x1b[91m"
-#define LINC_COLOR_GREEN "\x1b[92m"
-#define LINC_COLOR_YELLOW "\x1b[93m"
-#define LINC_COLOR_BLUE "\x1b[94m"
-#define LINC_COLOR_MAGENTA "\x1b[95m"
-#define LINC_COLOR_CYAN "\x1b[96m"
-#define LINC_COLOR_WHITE "\x1b[97m"
-
-#define LINC_TIMESTAMP_LENGTH 24           // Length of timestamp string "YYYY-MM-DD HH:MM:SS.mmm"
-#define LINC_LOG_TEXT_LEVEL_LENGTH 5       // Length of log level string
-#define LINC_LOG_TEXT_THREAD_ID_LENGTH 16  // Length of thread ID string
-#define LINC_LOG_TEXT_FILE_LENGTH 64       // Length of file name string
-#define LINC_LOG_TEXT_FUNC_LENGTH 64       // Length of function name string
-#define LINC_LOG_TEXT_LINE_LENGTH 10       // Length of line number string
-#define LINC_LOG_TEXT_CHAR_SET 24          // Extra characters for formatting, e.g., [ ], spaces, etc.
-
-#define LINC_LOG_TEXT_MAX_LENGTH                                                                                       \
-    (LINC_TIMESTAMP_LENGTH + LINC_LOG_TEXT_LEVEL_LENGTH + LINC_LOG_TEXT_THREAD_ID_LENGTH + LINC_MODULES_NAME_LENGTH    \
-     + LINC_LOG_TEXT_FILE_LENGTH + LINC_LOG_TEXT_LINE_LENGTH + LINC_LOG_TEXT_FUNC_LENGTH + LINC_LOG_MESSAGE_MAX_LENGTH \
-     + LINC_LOG_TEXT_CHAR_SET)
-#define LINC_LOG_TEXT_FORMAT                                                                                          \
-    "[ %s ] [ %-" LINC_NUM_TO_STR(LINC_LOG_TEXT_LEVEL_LENGTH) "s ] [ %0" LINC_NUM_TO_STR(                             \
-        LINC_LOG_TEXT_THREAD_ID_LENGTH) PRIxPTR " ] [ %-" LINC_NUM_TO_STR(LINC_MODULES_NAME_LENGTH) "s ] %s:%" PRIu32 \
-                                                                                                    " %s: %s\n"
-
-#define LINC_TIMESTAMP_FALLBACK "0000-00-00 00:00:00.000"                          // Fallback timestamp string
-#define LINC_LOG_TEXT_FALLBACK "[ LINC ERROR ] Internal logging error occurred\n"  // Fallback log message
-
-// ==================================================
-// Common Types
-// ==================================================
-
-#define LINC_LEVEL_DEFAULT 2  // Default log level
 
 enum linc_level {
     LINC_LEVEL_INHERIT = -1,  // Inherit level from parent (used internally)
@@ -69,26 +19,6 @@ enum linc_level {
     LINC_LEVEL_FATAL = 5,     // Critical errors that cause the application to terminate
 };
 
-// ==================================================
-// Modules Configuration
-// ==================================================
-
-#define LINC_MODULES_DEFAULT_NAME "main"  // Default module name
-#define LINC_MODULES_MAX_NUMBER 8         // Maximum number of modules
-#define LINC_MODULES_NAME_LENGTH 16       // Maximum length for module names
-
-struct linc_module {
-    char name[LINC_MODULES_NAME_LENGTH];  // Name of the module
-    enum linc_level level;                // Minimum log level to output (most for client side)
-    bool enabled;                         // Whether the module is enabled
-};
-
-// ==================================================
-// Sinks Configuration
-// ==================================================
-
-#define LINC_SINKS_MAX_NUMBER 8  // Maximum number of sinks
-
 enum linc_color_mode {
     LINC_COLOR_MODE_AUTO = 0,    // Enable color if output is a TTY
     LINC_COLOR_MODE_NEVER = 1,   // Never use colors
@@ -96,80 +26,90 @@ enum linc_color_mode {
 };
 
 enum linc_formatter {
-    LINC_FORMAT_TEXT = 0,  // Plain text format
-    LINC_FORMAT_JSON = 1,  // JSON format for structured logging
+    LINC_FORMATTER_TEXT = 0,  // Plain text format
+    LINC_FORMATTER_JSON = 1,  // JSON format for structured logging
 };
 
-struct linc_sink_entry {
-    void *data;                // Pointer to sink-specific data (e.g., file handle, network socket)
-    int (*open)(void *data);   // Function to open/init the sink
-    int (*close)(void *data);  // Function to close/deinit the sink
-    int (*write)(void *data, const char *buffer, size_t length);  // Function to write log data to the sink
-    int (*flush)(void *data);                                     // Function to flush any buffered log data
+struct linc_sink_funcs {
+    void *data;                                                    // User-defined data pointer
+    int (*open)(void *data);                                       // Function to open/init the sink
+    int (*close)(void *data);                                      // Function to close/deinit the sink
+    int (*write)(void *data, const char *message, size_t length);  // Function to write a log message
+    int (*flush)(void *data);                                      // Function to flush the sink (if applicable)
 };
 
-struct linc_sink {
-    enum linc_level level;            // Minimum log level to output (most for worker side)
-    enum linc_color_mode color_mode;  // Color mode for the sink
-    enum linc_formatter formatter;    // Formatter type for the sink
-    bool enabled;                     // Whether the sink is enabled
-    struct linc_sink_entry entry;     // Sink entry with function pointers and data
-};
+typedef struct linc_module *linc_module;  // Opaque pointer to a module
+typedef struct linc_sink *linc_sink;      // Opaque pointer to a sink
 
 // ==================================================
-// Log Entry Configuration
+// Macros and Definitions
 // ==================================================
 
-#define LINC_LOG_MESSAGE_MAX_LENGTH 512  // Maximum length for log messages
+#if defined(__GNUC__)
+#define LINC_PRINT_FMT(fmt, args) \
+    __attribute__((format(printf, fmt, args)))  // GCC format attribute for printf-style functions
+#else
+#define LINC_PRINT_FMT(fmt, args)
+#endif
 
-struct linc_entry {
-    int64_t timestamp;                          // Timestamp in nanoseconds since epoch
-    enum linc_level level;                      // Log level of the entry
-    uintptr_t thread_id;                        // Thread ID where the log was generated
-    size_t module_index;                        // Index of the module in the modules list
-    const char *file;                           // Source file where the log was generated
-    uint32_t line;                              // Line number in the source file
-    const char *func;                           // Function name where the log was generated
-    char message[LINC_LOG_MESSAGE_MAX_LENGTH];  // Log message content
-};
+#if !defined(LINC_DEFAULT_LEVEL)
+#define LINC_DEFAULT_LEVEL LINC_LEVEL_INFO  // Default log level
+#elif (LINC_DEFAULT_LEVEL < LINC_LEVEL_TRACE) || (LINC_DEFAULT_LEVEL > LINC_LEVEL_FATAL)
+#error "LINC_DEFAULT_LEVEL must be between LINC_LEVEL_TRACE and LINC_LEVEL_FATAL"
+#endif
+
+#if !defined(LINC_DEFAULT_MODULE_NAME_LENGTH)
+#define LINC_DEFAULT_MODULE_NAME_LENGTH 16  // Maximum length for module names
+#elif (LINC_DEFAULT_MODULE_NAME_LENGTH < 1)
+#error "LINC_DEFAULT_MODULE_NAME_LENGTH must be at least 1"
+#endif
+
+#if !defined(LINC_DEFAULT_MODULE_NAME)
+#define LINC_DEFAULT_MODULE_NAME "main"  // Default module name
+#elif (sizeof(LINC_DEFAULT_MODULE_NAME) > LINC_DEFAULT_MODULE_NAME_LENGTH) || (sizeof(LINC_DEFAULT_MODULE_NAME) < 1)
+#error "LINC_DEFAULT_MODULE_NAME must be between 1 and LINC_DEFAULT_MODULE_NAME_LENGTH characters"
+#endif
+
+#if !defined(LINC_DEFAULT_MAX_MODULES)
+#define LINC_DEFAULT_MAX_MODULES 8  // Maximum number of modules
+#elif (LINC_DEFAULT_MAX_MODULES < 1)
+#error "LINC_DEFAULT_MAX_MODULES must be at least 1"
+#endif
+
+#if !defined(LINC_DEFAULT_SINK_NAME_LENGTH)
+#define LINC_DEFAULT_SINK_NAME_LENGTH 16  // Maximum length for sink names
+#elif (LINC_DEFAULT_SINK_NAME_LENGTH < 1)
+#error "LINC_DEFAULT_SINK_NAME_LENGTH must be at least 1"
+#endif
+
+#if !defined(LINC_DEFAULT_SINK_NAME)
+#define LINC_DEFAULT_SINK_NAME "stderr"  // Default sink name
+#elif (sizeof(LINC_DEFAULT_SINK_NAME) > LINC_DEFAULT_SINK_NAME_LENGTH) || (sizeof(LINC_DEFAULT_SINK_NAME) < 1)
+#error "LINC_DEFAULT_SINK_NAME must be between 1 and LINC_DEFAULT_SINK_NAME_LENGTH characters"
+#endif
+
+#if !defined(LINC_DEFAULT_MAX_SINKS)
+#define LINC_DEFAULT_MAX_SINKS 8  // Maximum number of sinks
+#elif (LINC_DEFAULT_MAX_SINKS < 1)
+#error "LINC_DEFAULT_MAX_SINKS must be at least 1"
+#endif
+
+#if !defined(LINC_DEFAULT_MAX_MESSAGE_LENGTH)
+#define LINC_DEFAULT_MAX_MESSAGE_LENGTH 512  // Default maximum length for log messages
+#elif (LINC_DEFAULT_MAX_MESSAGE_LENGTH < 1)
+#error "LINC_DEFAULT_MAX_MESSAGE_LENGTH must be at least 1"
+#endif
+
+#define LINC_ZERO_CHAR_LENGTH 1     // Zero character length
+#define LINC_NEWLINE_CHAR_LENGTH 1  // Newline character length
 
 // ==================================================
-// Linc Configuration
+// Functions
 // ==================================================
 
-struct linc {
-    enum linc_level level;                                     // Global minimum log level (client side for modules)
-    struct linc_module modules_list[LINC_MODULES_MAX_NUMBER];  // List of modules
-    size_t modules_count;                                      // Number of modules in the list
-    struct linc_sink sinks_list[LINC_SINKS_MAX_NUMBER];        // List of sinks
-    size_t sinks_count;                                        // Number of sinks in the list
-};
+int linc_set_level(enum linc_level level);
 
-// ==================================================
-// APIs linc
-// ==================================================
-
-#define TRACE(format, ...) linc_log(NULL, LINC_LEVEL_TRACE, __FILE__, __LINE__, __func__, format, ##__VA_ARGS__)
-#define DEBUG(format, ...) linc_log(NULL, LINC_LEVEL_DEBUG, __FILE__, __LINE__, __func__, format, ##__VA_ARGS__)
-#define INFO(format, ...) linc_log(NULL, LINC_LEVEL_INFO, __FILE__, __LINE__, __func__, format, ##__VA_ARGS__)
-#define WARN(format, ...) linc_log(NULL, LINC_LEVEL_WARN, __FILE__, __LINE__, __func__, format, ##__VA_ARGS__)
-#define ERROR(format, ...) linc_log(NULL, LINC_LEVEL_ERROR, __FILE__, __LINE__, __func__, format, ##__VA_ARGS__)
-#define FATAL(format, ...) linc_log(NULL, LINC_LEVEL_FATAL, __FILE__, __LINE__, __func__, format, ##__VA_ARGS__)
-
-#define TRACE_M(module, format, ...) \
-    linc_log(module, LINC_LEVEL_TRACE, __FILE__, __LINE__, __func__, format, ##__VA_ARGS__)
-#define DEBUG_M(module, format, ...) \
-    linc_log(module, LINC_LEVEL_DEBUG, __FILE__, __LINE__, __func__, format, ##__VA_ARGS__)
-#define INFO_M(module, format, ...) \
-    linc_log(module, LINC_LEVEL_INFO, __FILE__, __LINE__, __func__, format, ##__VA_ARGS__)
-#define WARN_M(module, format, ...) \
-    linc_log(module, LINC_LEVEL_WARN, __FILE__, __LINE__, __func__, format, ##__VA_ARGS__)
-#define ERROR_M(module, format, ...) \
-    linc_log(module, LINC_LEVEL_ERROR, __FILE__, __LINE__, __func__, format, ##__VA_ARGS__)
-#define FATAL_M(module, format, ...) \
-    linc_log(module, LINC_LEVEL_FATAL, __FILE__, __LINE__, __func__, format, ##__VA_ARGS__)
-
-void linc_log(const char *module,
+void linc_log(const char *module_name,
               enum linc_level level,
               const char *file,
               uint32_t line,
@@ -177,16 +117,37 @@ void linc_log(const char *module,
               const char *format,
               ...) LINC_PRINT_FMT(6, 7);
 
-int linc_set_level(enum linc_level level);
+#define TRACE(...) linc_log(NULL, LINC_LEVEL_TRACE, __FILE__, __LINE__, __func__, __VA_ARGS__)
+#define DEBUG(...) linc_log(NULL, LINC_LEVEL_DEBUG, __FILE__, __LINE__, __func__, __VA_ARGS__)
+#define INFO(...) linc_log(NULL, LINC_LEVEL_INFO, __FILE__, __LINE__, __func__, __VA_ARGS__)
+#define WARN(...) linc_log(NULL, LINC_LEVEL_WARN, __FILE__, __LINE__, __func__, __VA_ARGS__)
+#define ERROR(...) linc_log(NULL, LINC_LEVEL_ERROR, __FILE__, __LINE__, __func__, __VA_ARGS__)
+#define FATAL(...) linc_log(NULL, LINC_LEVEL_FATAL, __FILE__, __LINE__, __func__, __VA_ARGS__)
 
-int linc_add_module(const char *name);
-int linc_set_module_enabled(const char *name, bool enabled);
-int linc_set_module_level(const char *name, enum linc_level level);
+#define TRACE_M(module, ...) linc_log(module, LINC_LEVEL_TRACE, __FILE__, __LINE__, __func__, __VA_ARGS__)
+#define DEBUG_M(module, ...) linc_log(module, LINC_LEVEL_DEBUG, __FILE__, __LINE__, __func__, __VA_ARGS__)
+#define INFO_M(module, ...) linc_log(module, LINC_LEVEL_INFO, __FILE__, __LINE__, __func__, __VA_ARGS__)
+#define WARN_M(module, ...) linc_log(module, LINC_LEVEL_WARN, __FILE__, __LINE__, __func__, __VA_ARGS__)
+#define ERROR_M(module, ...) linc_log(module, LINC_LEVEL_ERROR, __FILE__, __LINE__, __func__, __VA_ARGS__)
+#define FATAL_M(module, ...) linc_log(module, LINC_LEVEL_FATAL, __FILE__, __LINE__, __func__, __VA_ARGS__)
 
-int linc_add_sink(struct linc_sink_entry entry);
-int linc_set_sink_enabled(size_t index, bool enabled);
-int linc_set_sink_level(size_t index, enum linc_level level);
-int linc_set_sink_color_mode(size_t index, enum linc_color_mode color_mode);
-int linc_set_sink_formatter(size_t index, enum linc_formatter formatter);
+linc_module linc_register_module(const char *name, enum linc_level level, bool enabled);
+linc_sink linc_register_sink(const char *name,
+                             enum linc_level level,
+                             enum linc_color_mode color_mode,
+                             enum linc_formatter formatter,
+                             bool enabled,
+                             struct linc_sink_funcs funcs);
 
-#endif  // LINC_INCLUDE_LINC_H_
+linc_module linc_get_module(const char *name);
+linc_sink linc_get_sink(const char *name);
+
+int linc_set_module_level(linc_module module, enum linc_level level);
+int linc_set_module_enabled(linc_module module, bool enabled);
+
+int linc_set_sink_level(linc_sink sink, enum linc_level level);
+int linc_set_sink_color_mode(linc_sink sink, enum linc_color_mode color_mode);
+int linc_set_sink_formatter(linc_sink sink, enum linc_formatter formatter);
+int linc_set_sink_enabled(linc_sink sink, bool enabled);
+
+#endif  // LINC_INCLUDE_LINC_H
