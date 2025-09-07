@@ -13,6 +13,9 @@ BUILD_DIR ?= build
 OBJ_DIR := $(BUILD_DIR)/objects
 BIN_DIR := $(BUILD_DIR)/binaries
 
+EXT_DIR ?= external
+UTINC_DIR ?= $(EXT_DIR)/utinc
+
 BEAR_FILE ?= $(BUILD_DIR)/compile_commands.json
 
 # MAIN_SOURCE := $(SRC_DIR)/main.c
@@ -21,6 +24,7 @@ BEAR_FILE ?= $(BUILD_DIR)/compile_commands.json
 # MAIN_DEPS := $(OBJ_DIR)/$(MAIN_SOURCE:.c=.d)
 
 SRC_SOURCES := $(shell find $(SRC_DIR) -name '*.c' -not -wholename '$(MAIN_SOURCE)')
+SRC_SOURCES += $(shell find $(UTINC_DIR)/$(SRC_DIR) -name '*.c')
 SRC_OBJECTS := $(patsubst %.c,$(OBJ_DIR)/%.o,$(SRC_SOURCES))
 SRC_DEPS := $(patsubst %.c,$(OBJ_DIR)/%.d,$(SRC_SOURCES))
 
@@ -45,7 +49,7 @@ CCWRAP := $(CC)
 endif
 
 # Preprocessor flags
-CPPFLAGS ?= -D_POSIX_C_SOURCE=200809L -I$(INC_DIR)
+CPPFLAGS ?= -D_POSIX_C_SOURCE=200809L -I$(INC_DIR) -I$(UTINC_DIR)/$(INC_DIR)
 
 # Compiler flags
 CFLAGS ?= -Wall -Wextra -Werror -std=c99 -pedantic-errors
