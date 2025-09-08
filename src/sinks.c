@@ -108,6 +108,7 @@ static struct linc_sink *linc_add_sink(struct linc_sink_list *sinks,
     sink->enabled = enabled;
     sinks->count += 1;
 
+    sink->funcs.open(sink->funcs.data);
     return sink;
 }
 
