@@ -24,6 +24,7 @@
 // Log message                                  -> LINC_DEFAULT_MAX_MESSAGE_LENGTH
 //
 // [ -- ] [ -- ] [ -- ] [ -- ] --:-- --: --     -> LINC_LOG_EXTRA_FMT_LENGTH
+// 5 [ 10 ] [ 15 ] [ 10 ] [ 10 ] 10:10 10: --   -> LINC_LOG_COLORS_FMT_LENGTH
 
 #define LINC_LOG_TIMESTAMP_LENGTH 23  // Length of timestamp string "YYYY-MM-DD HH:MM:SS.mmm"
 #define LINC_LOG_LEVEL_LENGTH 5       // Length of log level string
@@ -32,12 +33,25 @@
 #define LINC_LOG_LINE_LENGTH 10       // Length of line number string
 #define LINC_LOG_FUNC_LENGTH 64       // Length of function name string
 
-#define LINC_LOG_EXTRA_FMT_LENGTH 24  // Extra characters for formatting, e.g., [ ], spaces, etc.
+#define LINC_LOG_EXTRA_FMT_LENGTH 24   // Extra characters for formatting, e.g., [ ], spaces, etc.
+#define LINC_LOG_COLORS_FMT_LENGTH 80  // Extra characters for ANSI color codes
 
 #define LINC_LOG_MAX_LENGTH                                                                                          \
     (LINC_LOG_TIMESTAMP_LENGTH + LINC_LOG_LEVEL_LENGTH + LINC_LOG_THREAD_ID_LENGTH + LINC_DEFAULT_MODULE_NAME_LENGTH \
      + LINC_LOG_FILE_LENGTH + LINC_LOG_LINE_LENGTH + LINC_LOG_FUNC_LENGTH + LINC_DEFAULT_MAX_MESSAGE_LENGTH          \
-     + LINC_LOG_EXTRA_FMT_LENGTH)
+     + LINC_LOG_EXTRA_FMT_LENGTH + LINC_LOG_COLORS_FMT_LENGTH)
+
+#define LINC_COLOR_RESET "\x1b[0m"
+#define LINC_COLOR_BOLD "\x1b[1m"
+#define LINC_COLOR_DIM "\x1b[2m"
+#define LINC_COLOR_NORMAL "\x1b[22m"
+#define LINC_COLOR_RED "\x1b[91m"
+#define LINC_COLOR_GREEN "\x1b[92m"
+#define LINC_COLOR_YELLOW "\x1b[93m"
+#define LINC_COLOR_BLUE "\x1b[94m"
+#define LINC_COLOR_MAGENTA "\x1b[95m"
+#define LINC_COLOR_CYAN "\x1b[96m"
+#define LINC_COLOR_WHITE "\x1b[97m"
 
 // ==================================================
 // Structures and Enums
@@ -49,24 +63,9 @@ struct linc {
     struct linc_sink_list sinks;      // List of registered sinks
 };
 
-struct linc_metadata {
-    int64_t timestamp;                                                      // Timestamp in nanoseconds since epoch
-    enum linc_level level;                                                  // Level of the log
-    uintptr_t thread_id;                                                    // Thread ID where the log was generated
-    const char *module_name;                                                // Module name where the log was generated
-    const char *file;                                                       // Source file where the log was generated
-    uint32_t line;                                                          // Line number in the source file
-    const char *func;                                                       // Function name where the log was generated
-    char message[LINC_DEFAULT_MAX_MESSAGE_LENGTH + LINC_ZERO_CHAR_LENGTH];  // Log message content
-};
-
 // ==================================================
 // Internal Functions
 // ==================================================
-
-int64_t linc_timestamp(void);
-int linc_timestamp_string(int64_t timestamp, char *buffer, size_t size);
-const char *linc_level_string(enum linc_level level);
 
 void linc_init(void);
 struct linc *linc_get_state(void);
@@ -82,5 +81,9 @@ void linc_temp_worker(struct linc_metadata *metadata);
 // ==================================================
 
 // int linc_set_level(enum linc_level level);
+// int64_t linc_timestamp(void);
+// int linc_timestamp_string(int64_t timestamp, char *buffer, size_t size);
+// const char *linc_level_string(enum linc_level level);
+// int linc_stringify_metadata(struct linc_metadata *metadata, char *buffer, size_t length, bool use_colors);
 
 #endif  // LINC_INCLUDE_INTERNAL_SHARED_H

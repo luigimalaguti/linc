@@ -1,7 +1,9 @@
 #include "internal/shared.h"
+#include "linc.h"
 
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 
 // ==================================================
 // Default Sink Functions
@@ -17,10 +19,30 @@ static int linc_sink_stderr_close(void *data) {
     return 0;
 }
 
-static int linc_sink_stderr_write(void *data, const char *buffer, size_t length) {
+static int linc_sink_stderr_write(void *data, struct linc_metadata *metadata) {
     FILE *output_file = (FILE *)data;
-    size_t written = fwrite(buffer, sizeof(char), length, output_file);
-    return written == length ? 0 : -1;
+
+    if (output_file == NULL) {
+        return -1;
+    }
+    int fd = fileno(output_file);
+    if (fd < 0) {
+        return -1;
+    }
+    bool use_colors = isatty(fd) == 1;
+
+    char formatted_log[LINC_LOG_MAX_LENGTH + LINC_NEWLINE_CHAR_LENGTH + LINC_ZERO_CHAR_LENGTH];
+    int written = linc_stringify_metadata(metadata, formatted_log, sizeof(formatted_log), use_colors);
+
+    if (written < 0) {
+        strcpy(formatted_log, "[ LINC ERROR ] Internal logging error\n");
+        written = strlen(formatted_log);
+    } else if ((size_t)written >= sizeof(formatted_log)) {
+        written = sizeof(formatted_log) - 1;
+    }
+
+    size_t write_size = fwrite(formatted_log, sizeof(char), written, output_file);
+    return write_size == (size_t)written ? 0 : -1;
 }
 
 static int linc_sink_stderr_flush(void *data) {
@@ -58,20 +80,6 @@ static int linc_check_level_sink(enum linc_level level) {
     return 0;
 }
 
-static int linc_check_color_mode_sink(enum linc_color_mode color_mode) {
-    if (color_mode < LINC_COLOR_MODE_AUTO || color_mode > LINC_COLOR_MODE_ALWAYS) {
-        return -1;
-    }
-    return 0;
-}
-
-static int linc_check_formatter_sink(enum linc_formatter formatter) {
-    if (formatter < LINC_FORMATTER_TEXT || formatter > LINC_FORMATTER_JSON) {
-        return -1;
-    }
-    return 0;
-}
-
 static int linc_check_funcs_sink(struct linc_sink_funcs funcs) {
     if (funcs.open == NULL || funcs.close == NULL || funcs.write == NULL || funcs.flush == NULL) {
         return -1;
@@ -79,20 +87,13 @@ static int linc_check_funcs_sink(struct linc_sink_funcs funcs) {
     return 0;
 }
 
-static struct linc_sink *linc_add_sink(struct linc_sink_list *sinks,
-                                       const char *name,
-                                       enum linc_level level,
-                                       enum linc_color_mode color_mode,
-                                       enum linc_formatter formatter,
-                                       bool enabled,
-                                       struct linc_sink_funcs funcs) {
+static struct linc_sink *linc_add_sink(
+    struct linc_sink_list *sinks, const char *name, enum linc_level level, bool enabled, struct linc_sink_funcs funcs) {
     bool is_failed = false;
     is_failed |= sinks == NULL;
     is_failed |= sinks->count >= LINC_DEFAULT_MAX_SINKS;
     is_failed |= linc_check_name_sink(sinks, name) < 0;
     is_failed |= linc_check_level_sink(level) < 0;
-    is_failed |= linc_check_color_mode_sink(color_mode) < 0;
-    is_failed |= linc_check_formatter_sink(formatter) < 0;
     is_failed |= linc_check_funcs_sink(funcs) < 0;
 
     if (is_failed == true) {
@@ -100,10 +101,9 @@ static struct linc_sink *linc_add_sink(struct linc_sink_list *sinks,
     }
 
     struct linc_sink *sink = &sinks->list[sinks->count];
-    strcpy(sink->name, name);
+    strncpy(sink->name, name, LINC_DEFAULT_SINK_NAME_LENGTH);
+    sink->name[LINC_DEFAULT_SINK_NAME_LENGTH] = '\0';
     sink->level = level;
-    sink->color_mode = color_mode;
-    sink->formatter = formatter;
     sink->funcs = funcs;
     sink->enabled = enabled;
     sinks->count += 1;
@@ -121,22 +121,16 @@ void linc_default_sink(struct linc_sink_list *sinks) {
         .write = linc_sink_stderr_write,
         .flush = linc_sink_stderr_flush,
     };
-    linc_add_sink(
-        sinks, LINC_DEFAULT_SINK_NAME, LINC_LEVEL_TRACE, LINC_COLOR_MODE_AUTO, LINC_FORMATTER_TEXT, true, funcs);
+    linc_add_sink(sinks, LINC_DEFAULT_SINK_NAME, LINC_LEVEL_TRACE, true, funcs);
 }
 
 // ==================================================
 // Public Functions
 // ==================================================
 
-linc_sink linc_register_sink(const char *name,
-                             enum linc_level level,
-                             enum linc_color_mode color_mode,
-                             enum linc_formatter formatter,
-                             bool enabled,
-                             struct linc_sink_funcs funcs) {
+linc_sink linc_register_sink(const char *name, enum linc_level level, bool enabled, struct linc_sink_funcs funcs) {
     struct linc_sink_list *sinks = linc_get_sinks();
-    struct linc_sink *sink = linc_add_sink(sinks, name, level, color_mode, formatter, enabled, funcs);
+    struct linc_sink *sink = linc_add_sink(sinks, name, level, enabled, funcs);
     if (sink == NULL) {
         return NULL;
     }
@@ -169,24 +163,6 @@ int linc_set_sink_level(linc_sink sink, enum linc_level level) {
         return -1;
     }
     sink->level = level;
-    return 0;
-}
-
-int linc_set_sink_color_mode(linc_sink sink, enum linc_color_mode color_mode) {
-    linc_init();
-    if (sink == NULL || linc_check_color_mode_sink(color_mode) < 0) {
-        return -1;
-    }
-    sink->color_mode = color_mode;
-    return 0;
-}
-
-int linc_set_sink_formatter(linc_sink sink, enum linc_formatter formatter) {
-    linc_init();
-    if (sink == NULL || linc_check_formatter_sink(formatter) < 0) {
-        return -1;
-    }
-    sink->formatter = formatter;
     return 0;
 }
 

@@ -48,7 +48,8 @@ static struct linc_module *linc_add_module(struct linc_module_list *modules,
     }
 
     struct linc_module *module = &modules->list[modules->count];
-    strcpy(module->name, name);
+    strncpy(module->name, name, LINC_DEFAULT_MODULE_NAME_LENGTH);
+    module->name[LINC_DEFAULT_MODULE_NAME_LENGTH] = '\0';
     module->level = level;
     module->enabled = enabled;
     modules->count += 1;

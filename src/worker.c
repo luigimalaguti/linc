@@ -1,6 +1,5 @@
 #include "internal/shared.h"
 
-#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -48,11 +47,6 @@ static int linc_check_sink(struct linc_sink *sink, enum linc_level level) {
 }
 
 void linc_temp_worker(struct linc_metadata *metadata) {
-    char timestamp_string[LINC_LOG_TIMESTAMP_LENGTH + LINC_ZERO_CHAR_LENGTH];
-    if (linc_timestamp_string(metadata->timestamp, timestamp_string, sizeof(timestamp_string)) < 0) {
-        strcpy(timestamp_string, "0000-00-00 00:00:00.000");
-    }
-
     struct linc_sink_list *sinks = linc_get_sinks();
     for (size_t i = 0; i < sinks->count; i++) {
         struct linc_sink *sink = &sinks->list[i];
@@ -61,31 +55,7 @@ void linc_temp_worker(struct linc_metadata *metadata) {
             continue;
         }
 
-        const char *file = metadata->file == NULL ? "unknown" : metadata->file;
-        const char *func = metadata->func == NULL ? "unknown" : metadata->func;
-        char log_text_format[LINC_LOG_MAX_LENGTH + LINC_NEWLINE_CHAR_LENGTH + LINC_ZERO_CHAR_LENGTH];
-        int written = snprintf(
-            log_text_format,
-            sizeof(log_text_format),
-            "[ %s ] [ %-" LINC_STRINGIFY(LINC_LOG_LEVEL_LENGTH) "s ] [ %0" LINC_STRINGIFY(LINC_LOG_THREAD_ID_LENGTH)
-                PRIxPTR " ] [ %-" LINC_STRINGIFY(LINC_DEFAULT_MODULE_NAME_LENGTH) "s ] %s:%" PRIu32 " %s: %s\n",
-            timestamp_string,
-            linc_level_string(metadata->level),
-            metadata->thread_id,
-            metadata->module_name,
-            file,
-            metadata->line,
-            func,
-            metadata->message);
-
-        if (written < 0) {
-            strcpy(log_text_format, "[ LINC ERROR ] Internal logging error\n");
-            written = strlen(log_text_format);
-        } else if ((size_t)written >= sizeof(log_text_format)) {
-            written = sizeof(log_text_format) - 1;
-        }
-
-        sink->funcs.write(sink->funcs.data, log_text_format, written);
+        sink->funcs.write(sink->funcs.data, metadata);
     }
 
     free(metadata);

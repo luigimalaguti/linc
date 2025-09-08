@@ -53,7 +53,7 @@ static int linc_check_module(struct linc_module *module, enum linc_level level) 
 
 void linc_log(const char *module_name,
               enum linc_level level,
-              const char *file,
+              const char *filename,
               uint32_t line,
               const char *func,
               const char *format,
@@ -74,7 +74,7 @@ void linc_log(const char *module_name,
     metadata->level = level;
     metadata->thread_id = (uintptr_t)pthread_self();
     metadata->module_name = module->name;
-    metadata->file = file;
+    metadata->filename = filename;
     metadata->line = line;
     metadata->func = func;
 

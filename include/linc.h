@@ -6,42 +6,6 @@
 #include <stdint.h>
 
 // ==================================================
-// Structures and Enums
-// ==================================================
-
-enum linc_level {
-    LINC_LEVEL_INHERIT = -1,  // Inherit level from parent (used internally)
-    LINC_LEVEL_TRACE = 0,     // Lowest level, for detailed debugging information
-    LINC_LEVEL_DEBUG = 1,     // Debugging information, useful for developers
-    LINC_LEVEL_INFO = 2,      // General information about application state
-    LINC_LEVEL_WARN = 3,      // Warning messages, indicating potential issues
-    LINC_LEVEL_ERROR = 4,     // Error messages, indicating something went wrong
-    LINC_LEVEL_FATAL = 5,     // Critical errors that cause the application to terminate
-};
-
-enum linc_color_mode {
-    LINC_COLOR_MODE_AUTO = 0,    // Enable color if output is a TTY
-    LINC_COLOR_MODE_NEVER = 1,   // Never use colors
-    LINC_COLOR_MODE_ALWAYS = 2,  // Always use colors (assume ANSI safe)
-};
-
-enum linc_formatter {
-    LINC_FORMATTER_TEXT = 0,  // Plain text format
-    LINC_FORMATTER_JSON = 1,  // JSON format for structured logging
-};
-
-struct linc_sink_funcs {
-    void *data;                                                    // User-defined data pointer
-    int (*open)(void *data);                                       // Function to open/init the sink
-    int (*close)(void *data);                                      // Function to close/deinit the sink
-    int (*write)(void *data, const char *message, size_t length);  // Function to write a log message
-    int (*flush)(void *data);                                      // Function to flush the sink (if applicable)
-};
-
-typedef struct linc_module *linc_module;  // Opaque pointer to a module
-typedef struct linc_sink *linc_sink;      // Opaque pointer to a sink
-
-// ==================================================
 // Macros and Definitions
 // ==================================================
 
@@ -104,14 +68,48 @@ typedef struct linc_sink *linc_sink;      // Opaque pointer to a sink
 #define LINC_NEWLINE_CHAR_LENGTH 1  // Newline character length
 
 // ==================================================
+// Structures and Enums
+// ==================================================
+
+enum linc_level {
+    LINC_LEVEL_INHERIT = -1,  // Inherit level from parent (used internally)
+    LINC_LEVEL_TRACE = 0,     // Lowest level, for detailed debugging information
+    LINC_LEVEL_DEBUG = 1,     // Debugging information, useful for developers
+    LINC_LEVEL_INFO = 2,      // General information about application state
+    LINC_LEVEL_WARN = 3,      // Warning messages, indicating potential issues
+    LINC_LEVEL_ERROR = 4,     // Error messages, indicating something went wrong
+    LINC_LEVEL_FATAL = 5,     // Critical errors that cause the application to terminate
+};
+
+struct linc_metadata {
+    int64_t timestamp;                                                      // Timestamp in nanoseconds since epoch
+    enum linc_level level;                                                  // Level of the log
+    uintptr_t thread_id;                                                    // Thread ID where the log was generated
+    const char *module_name;                                                // Module name where the log was generated
+    const char *filename;                                                   // Source file where the log was generated
+    uint32_t line;                                                          // Line number in the source file
+    const char *func;                                                       // Function name where the log was generated
+    char message[LINC_DEFAULT_MAX_MESSAGE_LENGTH + LINC_ZERO_CHAR_LENGTH];  // Log message content
+};
+
+struct linc_sink_funcs {
+    void *data;                                                // User-defined data pointer
+    int (*open)(void *data);                                   // Function to open/init the sink
+    int (*close)(void *data);                                  // Function to close/deinit the sink
+    int (*write)(void *data, struct linc_metadata *metadata);  // Function to write a log message
+    int (*flush)(void *data);                                  // Function to flush the sink (if applicable)
+};
+
+typedef struct linc_module *linc_module;  // Opaque pointer to a module
+typedef struct linc_sink *linc_sink;      // Opaque pointer to a sink
+
+// ==================================================
 // Functions
 // ==================================================
 
-int linc_set_level(enum linc_level level);
-
 void linc_log(const char *module_name,
               enum linc_level level,
-              const char *file,
+              const char *filename,
               uint32_t line,
               const char *func,
               const char *format,
@@ -131,13 +129,10 @@ void linc_log(const char *module_name,
 #define ERROR_M(module, ...) linc_log(module, LINC_LEVEL_ERROR, __FILE__, __LINE__, __func__, __VA_ARGS__)
 #define FATAL_M(module, ...) linc_log(module, LINC_LEVEL_FATAL, __FILE__, __LINE__, __func__, __VA_ARGS__)
 
+int linc_set_level(enum linc_level level);
+
 linc_module linc_register_module(const char *name, enum linc_level level, bool enabled);
-linc_sink linc_register_sink(const char *name,
-                             enum linc_level level,
-                             enum linc_color_mode color_mode,
-                             enum linc_formatter formatter,
-                             bool enabled,
-                             struct linc_sink_funcs funcs);
+linc_sink linc_register_sink(const char *name, enum linc_level level, bool enabled, struct linc_sink_funcs funcs);
 
 linc_module linc_get_module(const char *name);
 linc_sink linc_get_sink(const char *name);
@@ -146,8 +141,11 @@ int linc_set_module_level(linc_module module, enum linc_level level);
 int linc_set_module_enabled(linc_module module, bool enabled);
 
 int linc_set_sink_level(linc_sink sink, enum linc_level level);
-int linc_set_sink_color_mode(linc_sink sink, enum linc_color_mode color_mode);
-int linc_set_sink_formatter(linc_sink sink, enum linc_formatter formatter);
 int linc_set_sink_enabled(linc_sink sink, bool enabled);
+
+int64_t linc_timestamp(void);
+int linc_timestamp_string(int64_t timestamp, char *buffer, size_t size);
+const char *linc_level_string(enum linc_level level);
+int linc_stringify_metadata(struct linc_metadata *metadata, char *buffer, size_t length, bool use_colors);
 
 #endif  // LINC_INCLUDE_LINC_H
