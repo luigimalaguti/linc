@@ -22,14 +22,13 @@ struct linc_module_list {
 // Internal Functions
 // ==================================================
 
-void linc_default_module(struct linc_module_list *modules);
+struct linc_module *linc_register_default_module(struct linc_module_list *modules);
 
 // ==================================================
 // Public Functions (linc.h)
 // ==================================================
 
 // linc_module linc_register_module(const char *name, enum linc_level level, bool enabled);
-// linc_module linc_get_module(const char *name);
 // int linc_set_module_level(linc_module module, enum linc_level level);
 // int linc_set_module_enabled(linc_module module, bool enabled);
 

@@ -51,17 +51,15 @@ static int linc_check_module(struct linc_module *module, enum linc_level level) 
 // Public Functions
 // ==================================================
 
-void linc_log(const char *module_name,
+void linc_log(struct linc_module *module,
               enum linc_level level,
               const char *filename,
               uint32_t line,
               const char *func,
               const char *format,
               ...) {
-    const char *name = module_name == NULL ? LINC_DEFAULT_MODULE_NAME : module_name;
-    struct linc_module *module = linc_get_module(name);
-
-    int module_check = linc_check_module(module, level);
+    struct linc_module *log_module = module == NULL ? linc_default_module : module;
+    int module_check = linc_check_module(log_module, level);
     if (module_check < 0 || (module_check == 0 && level < linc_get_level())) {
         return;
     }
@@ -73,7 +71,7 @@ void linc_log(const char *module_name,
     metadata->timestamp = linc_timestamp();
     metadata->level = level;
     metadata->thread_id = (uintptr_t)pthread_self();
-    metadata->module_name = module->name;
+    metadata->module_name = log_module->name;
     metadata->filename = filename;
     metadata->line = line;
     metadata->func = func;

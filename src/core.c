@@ -11,6 +11,8 @@
 // ==================================================
 
 static struct linc linc;
+struct linc_module *linc_default_module;
+struct linc_sink *linc_default_sink;
 static int64_t timestamp_offset = 0;
 
 // ==================================================
@@ -65,8 +67,8 @@ static void linc_bootstrap(void) {
 
     linc_timestamp_offset();
     linc.level = LINC_DEFAULT_LEVEL;
-    linc_default_module(&linc.modules);
-    linc_default_sink(&linc.sinks);
+    linc_default_module = linc_register_default_module(&linc.modules);
+    linc_default_sink = linc_register_default_sink(&linc.sinks);
 
     atexit(linc_shutdown);
 }
@@ -120,8 +122,16 @@ int64_t linc_timestamp(void) {
 }
 
 int linc_timestamp_string(int64_t timestamp, char *buffer, size_t size) {
+    if (buffer == NULL) {
+        return -1;
+    }
     time_t sec = timestamp / 1000000000L;
-    int16_t msec = (timestamp / 1000000L) % 1000;
+    int64_t n_sec = timestamp % 1000000000L;
+    if (n_sec < 0) {
+        n_sec += 1000000000L;
+        sec -= 1;
+    }
+    int m_sec = n_sec / 1000000L;
     struct tm utc_tm;
     gmtime_r(&sec, &utc_tm);
     int written = snprintf(buffer,
@@ -133,7 +143,7 @@ int linc_timestamp_string(int64_t timestamp, char *buffer, size_t size) {
                            utc_tm.tm_hour,
                            utc_tm.tm_min,
                            utc_tm.tm_sec,
-                           msec);
+                           m_sec);
     if (written < 0 || (size_t)written >= size) {
         return -1;
     }
@@ -179,17 +189,49 @@ static const char *linc_level_color_ansi(enum linc_level level) {
 }
 
 int linc_stringify_metadata(struct linc_metadata *metadata, char *buffer, size_t length, bool use_colors) {
+    if (metadata == NULL || buffer == NULL) {
+        return -1;
+    }
+
     char timestamp_string[LINC_LOG_TIMESTAMP_LENGTH + LINC_ZERO_CHAR_LENGTH];
     if (linc_timestamp_string(metadata->timestamp, timestamp_string, sizeof(timestamp_string)) < 0) {
         strcpy(timestamp_string, "0000-00-00 00:00:00.000");
     }
 
-    const char *filename = metadata->filename == NULL ? "unknown" : metadata->filename;
-    const char *func = metadata->func == NULL ? "unknown" : metadata->func;
+    const char *module_name;
+    if (metadata->module_name == NULL) {
+        module_name = "unknown";
+    } else {
+        size_t name_length = strnlen(metadata->module_name, LINC_DEFAULT_MODULE_NAME_LENGTH + LINC_ZERO_CHAR_LENGTH);
+        if (name_length == 0 || name_length > LINC_DEFAULT_MODULE_NAME_LENGTH) {
+            return -1;
+        }
+        module_name = metadata->module_name;
+    }
+    const char *filename;
+    if (metadata->filename == NULL) {
+        filename = "unknown";
+    } else {
+        size_t filename_length = strnlen(metadata->filename, LINC_LOG_FILE_LENGTH + LINC_ZERO_CHAR_LENGTH);
+        if (filename_length == 0 || filename_length > LINC_LOG_FILE_LENGTH) {
+            return -1;
+        }
+        filename = metadata->filename;
+    }
+    const char *func;
+    if (metadata->func == NULL) {
+        func = "unknown";
+    } else {
+        size_t func_length = strnlen(metadata->func, LINC_LOG_FUNC_LENGTH + LINC_ZERO_CHAR_LENGTH);
+        if (func_length == 0 || func_length > LINC_LOG_FUNC_LENGTH) {
+            return -1;
+        }
+        func = metadata->func;
+    }
+
     int written = snprintf(
         buffer,
         length,
-        "%s"
         "[ %s%s%s ] "
         "[ %s%-" LINC_STRINGIFY(LINC_LOG_LEVEL_LENGTH) "s%s ] "
         "[ %s%0" LINC_STRINGIFY(LINC_LOG_THREAD_ID_LENGTH) PRIxPTR "%s ] "
@@ -198,7 +240,6 @@ int linc_stringify_metadata(struct linc_metadata *metadata, char *buffer, size_t
         "%s%" PRIu32 "%s "
         "%s%s%s: "
         "%s\n",
-        LINC_COLOR_RESET,
         use_colors ? LINC_COLOR_BOLD : "",
         timestamp_string,
         use_colors ? LINC_COLOR_RESET : "",
@@ -209,7 +250,7 @@ int linc_stringify_metadata(struct linc_metadata *metadata, char *buffer, size_t
         metadata->thread_id,
         use_colors ? LINC_COLOR_RESET : "",
         use_colors ? LINC_COLOR_BOLD : "",
-        metadata->module_name,
+        module_name,
         use_colors ? LINC_COLOR_RESET : "",
         use_colors ? LINC_COLOR_CYAN : "",
         filename,
@@ -221,6 +262,8 @@ int linc_stringify_metadata(struct linc_metadata *metadata, char *buffer, size_t
         func,
         use_colors ? LINC_COLOR_RESET : "",
         metadata->message);
-
+    if (written < 0 || (size_t)written >= length) {
+        return -1;
+    }
     return written;
 }

@@ -112,7 +112,7 @@ static struct linc_sink *linc_add_sink(
     return sink;
 }
 
-void linc_default_sink(struct linc_sink_list *sinks) {
+struct linc_sink *linc_register_default_sink(struct linc_sink_list *sinks) {
     sinks->count = 0;
     struct linc_sink_funcs funcs = {
         .data = stderr,
@@ -121,40 +121,24 @@ void linc_default_sink(struct linc_sink_list *sinks) {
         .write = linc_sink_stderr_write,
         .flush = linc_sink_stderr_flush,
     };
-    linc_add_sink(sinks, LINC_DEFAULT_SINK_NAME, LINC_LEVEL_TRACE, true, funcs);
+    struct linc_sink *sink = linc_add_sink(sinks, LINC_DEFAULT_SINK_NAME, LINC_LEVEL_TRACE, true, funcs);
+    return sink;
 }
 
 // ==================================================
 // Public Functions
 // ==================================================
 
-linc_sink linc_register_sink(const char *name, enum linc_level level, bool enabled, struct linc_sink_funcs funcs) {
+struct linc_sink *linc_register_sink(const char *name,
+                                     enum linc_level level,
+                                     bool enabled,
+                                     struct linc_sink_funcs funcs) {
     struct linc_sink_list *sinks = linc_get_sinks();
     struct linc_sink *sink = linc_add_sink(sinks, name, level, enabled, funcs);
     if (sink == NULL) {
         return NULL;
     }
     return sink;
-}
-
-linc_sink linc_get_sink(const char *name) {
-    struct linc_sink_list *sinks = linc_get_sinks();
-    if (name == NULL) {
-        return NULL;
-    }
-
-    size_t name_length = strnlen(name, LINC_DEFAULT_SINK_NAME_LENGTH + LINC_ZERO_CHAR_LENGTH);
-    if (name_length == 0 || name_length > LINC_DEFAULT_SINK_NAME_LENGTH) {
-        return NULL;
-    }
-
-    for (size_t i = 0; i < sinks->count; i++) {
-        if (strncmp(sinks->list[i].name, name, LINC_DEFAULT_SINK_NAME_LENGTH) == 0) {
-            return &sinks->list[i];
-        }
-    }
-
-    return NULL;
 }
 
 int linc_set_sink_level(linc_sink sink, enum linc_level level) {

@@ -23,14 +23,13 @@ struct linc_sink_list {
 // Internal Functions
 // ==================================================
 
-void linc_default_sink(struct linc_sink_list *sinks);
+struct linc_sink *linc_register_default_sink(struct linc_sink_list *sinks);
 
 // ==================================================
 // Public Functions (linc.h)
 // ==================================================
 
 // linc_sink linc_register_sink(const char *name, enum linc_level level, bool enabled, struct linc_sink_funcs funcs);
-// linc_sink linc_get_sink(const char *name);
 // int linc_set_sink_level(linc_sink sink, enum linc_level level);
 // int linc_set_sink_enabled(linc_sink sink, bool enabled);
 

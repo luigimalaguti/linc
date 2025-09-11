@@ -103,11 +103,14 @@ struct linc_sink_funcs {
 typedef struct linc_module *linc_module;  // Opaque pointer to a module
 typedef struct linc_sink *linc_sink;      // Opaque pointer to a sink
 
+extern linc_module linc_default_module;  // Default module
+extern linc_sink linc_default_sink;      // Default sink
+
 // ==================================================
 // Functions
 // ==================================================
 
-void linc_log(const char *module_name,
+void linc_log(linc_module module,
               enum linc_level level,
               const char *filename,
               uint32_t line,
@@ -133,9 +136,6 @@ int linc_set_level(enum linc_level level);
 
 linc_module linc_register_module(const char *name, enum linc_level level, bool enabled);
 linc_sink linc_register_sink(const char *name, enum linc_level level, bool enabled, struct linc_sink_funcs funcs);
-
-linc_module linc_get_module(const char *name);
-linc_sink linc_get_sink(const char *name);
 
 int linc_set_module_level(linc_module module, enum linc_level level);
 int linc_set_module_enabled(linc_module module, bool enabled);

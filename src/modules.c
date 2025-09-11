@@ -57,42 +57,23 @@ static struct linc_module *linc_add_module(struct linc_module_list *modules,
     return module;
 }
 
-void linc_default_module(struct linc_module_list *modules) {
+struct linc_module *linc_register_default_module(struct linc_module_list *modules) {
     modules->count = 0;
-    linc_add_module(modules, LINC_DEFAULT_MODULE_NAME, LINC_LEVEL_INHERIT, true);
+    struct linc_module *module = linc_add_module(modules, LINC_DEFAULT_MODULE_NAME, LINC_LEVEL_INHERIT, true);
+    return module;
 }
 
 // ==================================================
 // Public Functions
 // ==================================================
 
-linc_module linc_register_module(const char *name, enum linc_level level, bool enabled) {
+struct linc_module *linc_register_module(const char *name, enum linc_level level, bool enabled) {
     struct linc_module_list *modules = linc_get_modules();
     struct linc_module *module = linc_add_module(modules, name, level, enabled);
     if (module == NULL) {
         return NULL;
     }
     return module;
-}
-
-linc_module linc_get_module(const char *name) {
-    struct linc_module_list *modules = linc_get_modules();
-    if (name == NULL) {
-        return NULL;
-    }
-
-    size_t name_length = strnlen(name, LINC_DEFAULT_MODULE_NAME_LENGTH + LINC_ZERO_CHAR_LENGTH);
-    if (name_length == 0 || name_length > LINC_DEFAULT_MODULE_NAME_LENGTH) {
-        return NULL;
-    }
-
-    for (size_t i = 0; i < modules->count; i++) {
-        if (strncmp(modules->list[i].name, name, LINC_DEFAULT_MODULE_NAME_LENGTH) == 0) {
-            return &modules->list[i];
-        }
-    }
-
-    return NULL;
 }
 
 int linc_set_module_level(linc_module module, enum linc_level level) {
