@@ -37,7 +37,6 @@ TEST_RUNNER(title, {
                   { ASSERT_STRING_EQUAL("FATAL", linc_level_string(LINC_LEVEL_FATAL), "Error to parse level"); });
 
         TEST_CASE("Should print UNKN level string", {
-            ASSERT_STRING_EQUAL("UNKN", linc_level_string(LINC_LEVEL_INHERIT), "Error to parse level");
             ASSERT_STRING_EQUAL("UNKN", linc_level_string(-1), "Error to parse level");
             ASSERT_STRING_EQUAL("UNKN", linc_level_string(6), "Error to parse level");
         });

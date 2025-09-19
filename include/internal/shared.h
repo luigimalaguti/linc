@@ -57,30 +57,56 @@
 // Structures and Enums
 // ==================================================
 
-struct linc {
-    enum linc_level level;            // Default log level
-    struct linc_module_list modules;  // List of registered modules
-    struct linc_sink_list sinks;      // List of registered sinks
+struct linc_ring_buffer {
+    struct linc_metadata buffer[LINC_DEFAULT_RING_BUFFER_SIZE + 1];  // Ring buffer (+1 to distinguish full vs empty)
+    size_t head;                                                     // Points to the next position to write
+    size_t tail;                                                     // Points to the next position to read
+    size_t size;                                                     // Maximum number of elements in the buffer
+    bool shutdown;                                                   // Indicates if the worker thread should shut down
+    pthread_t worker;                                                // Worker thread handle
+    pthread_mutex_t mutex;                                           // Mutex for synchronizing access
+    pthread_cond_t produce, consume;                                 // Condition variables for signaling
 };
+
+struct linc_task_sync {
+    pthread_mutex_t mutex;                   // Mutex for synchronizing access
+    pthread_cond_t wait_worker, wait_sinks;  // Condition variables for signaling
+    size_t worker_ready, sinks_ready;        // Number of worker/sinks ready
+    size_t worker_ended, sinks_ended;        // Number of worker/sinks ended
+    struct linc_metadata *metadata;          // Pointer to the current metadata being processed
+};
+
+struct linc {
+    struct linc_module_list modules;      // List of registered modules
+    struct linc_sink_list sinks;          // List of registered sinks
+    struct linc_ring_buffer ring_buffer;  // Ring buffer for log messages
+    struct linc_task_sync task_sync;      // Synchronization for sinking tasks
+};
+
+extern struct linc linc;
 
 // ==================================================
 // Internal Functions
 // ==================================================
 
 void linc_init(void);
-struct linc *linc_get_state(void);
-enum linc_level linc_get_level(void);
-struct linc_module_list *linc_get_modules(void);
-struct linc_sink_list *linc_get_sinks(void);
+void linc_timestamp_offset(void);
 
-// In the meantime, define the worker function here to be used by the client.
-void linc_temp_worker(struct linc_metadata *metadata);
+int linc_ring_buffer_enqueue(struct linc_metadata *metadata);
+int linc_ring_buffer_dequeue(struct linc_metadata *metadata);
+
+void linc_task_sync_wait_tasks(void);
+void linc_task_sync_wait_worker(void);
+void linc_task_sync_signal_tasks(void);
+void linc_task_sync_signal_worker(void);
+
+void *linc_worker(void *arg);
+void *linc_task(void *arg);
 
 // ==================================================
 // Public Functions (linc.h)
 // ==================================================
 
-// int linc_set_level(enum linc_level level);
 // int64_t linc_timestamp(void);
 // int linc_timestamp_string(int64_t timestamp, char *buffer, size_t size);
 // const char *linc_level_string(enum linc_level level);

@@ -1,6 +1,7 @@
 #include "internal/shared.h"
 #include "linc.h"
 
+#include <pthread.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -74,7 +75,7 @@ static int linc_check_name_sink(struct linc_sink_list *sinks, const char *name) 
 }
 
 static int linc_check_level_sink(enum linc_level level) {
-    if (level < LINC_LEVEL_INHERIT || level > LINC_LEVEL_FATAL) {
+    if (level < LINC_LEVEL_TRACE || level > LINC_LEVEL_FATAL) {
         return -1;
     }
     return 0;
@@ -108,7 +109,20 @@ static struct linc_sink *linc_add_sink(
     sink->enabled = enabled;
     sinks->count += 1;
 
+    pthread_rwlockattr_t attr;
+    pthread_rwlockattr_init(&attr);
+    pthread_rwlockattr_setkind_np(&attr, PTHREAD_RWLOCK_PREFER_WRITER_NONRECURSIVE_NP);
+    pthread_rwlock_init(&sink->lock, &attr);
+    pthread_rwlockattr_destroy(&attr);
+
     sink->funcs.open(sink->funcs.data);
+
+    pthread_attr_t task_attr;
+    pthread_attr_init(&task_attr);
+    pthread_attr_setdetachstate(&task_attr, PTHREAD_CREATE_DETACHED);
+    pthread_create(&sink->thread_id, &task_attr, linc_task, sink);
+    pthread_attr_destroy(&task_attr);
+
     return sink;
 }
 
@@ -121,6 +135,10 @@ struct linc_sink *linc_register_default_sink(struct linc_sink_list *sinks) {
         .write = linc_sink_stderr_write,
         .flush = linc_sink_stderr_flush,
     };
+    pthread_rwlockattr_t attr;
+    pthread_rwlockattr_init(&attr);
+    pthread_rwlock_init(&sinks->lock, &attr);
+    pthread_rwlockattr_destroy(&attr);
     struct linc_sink *sink = linc_add_sink(sinks, LINC_DEFAULT_SINK_NAME, LINC_LEVEL_TRACE, true, funcs);
     return sink;
 }
@@ -133,8 +151,11 @@ struct linc_sink *linc_register_sink(const char *name,
                                      enum linc_level level,
                                      bool enabled,
                                      struct linc_sink_funcs funcs) {
-    struct linc_sink_list *sinks = linc_get_sinks();
+    linc_init();
+    struct linc_sink_list *sinks = &linc.sinks;
+    pthread_rwlock_wrlock(&sinks->lock);
     struct linc_sink *sink = linc_add_sink(sinks, name, level, enabled, funcs);
+    pthread_rwlock_unlock(&sinks->lock);
     if (sink == NULL) {
         return NULL;
     }
@@ -146,7 +167,9 @@ int linc_set_sink_level(linc_sink sink, enum linc_level level) {
     if (sink == NULL || linc_check_level_sink(level) < 0) {
         return -1;
     }
+    pthread_rwlock_wrlock(&sink->lock);
     sink->level = level;
+    pthread_rwlock_unlock(&sink->lock);
     return 0;
 }
 
@@ -155,6 +178,8 @@ int linc_set_sink_enabled(linc_sink sink, bool enabled) {
     if (sink == NULL) {
         return -1;
     }
+    pthread_rwlock_wrlock(&sink->lock);
     sink->enabled = enabled;
+    pthread_rwlock_unlock(&sink->lock);
     return 0;
 }

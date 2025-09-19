@@ -3,6 +3,8 @@
 
 #include "linc.h"
 
+#include <pthread.h>
+
 // ==================================================
 // Structures and Enums
 // ==================================================
@@ -12,11 +14,14 @@ struct linc_sink {
     enum linc_level level;                                             // Minimum log level for this sink
     bool enabled;                                                      // Is sink enabled
     struct linc_sink_funcs funcs;                                      // Function pointers for sink operations
+    pthread_t thread_id;                                               // Thread ID for async operations
+    pthread_rwlock_t lock;                                             // Lock for thread safety
 };
 
 struct linc_sink_list {
     struct linc_sink list[LINC_DEFAULT_MAX_SINKS];  // List of registered sinks
     size_t count;                                   // Number of registered sinks
+    pthread_rwlock_t lock;                          // Lock for thread safety
 };
 
 // ==================================================

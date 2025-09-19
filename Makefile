@@ -23,10 +23,12 @@ BEAR_FILE ?= $(BUILD_DIR)/compile_commands.json
 # MAIN_TARGET := $(BIN_DIR)/$(SRC_DIR)/bin
 # MAIN_DEPS := $(OBJ_DIR)/$(MAIN_SOURCE:.c=.d)
 
-SRC_SOURCES := $(shell find $(SRC_DIR) -name '*.c' -not -wholename '$(MAIN_SOURCE)')
-SRC_SOURCES += $(shell find $(UTINC_DIR)/$(SRC_DIR) -name '*.c')
-SRC_OBJECTS := $(patsubst %.c,$(OBJ_DIR)/%.o,$(SRC_SOURCES))
-SRC_DEPS := $(patsubst %.c,$(OBJ_DIR)/%.d,$(SRC_SOURCES))
+LOCAL_SOURCES := $(shell find $(SRC_DIR) -name '*.c' -not -wholename '$(MAIN_SOURCE)')
+EXTERNAL_SOURCES := $(shell find $(UTINC_DIR)/$(SRC_DIR) -name '*.c')
+LOCAL_OBJECTS := $(patsubst %.c,$(OBJ_DIR)/%.o,$(LOCAL_SOURCES))
+EXTERNAL_OBJECTS := $(patsubst $(UTINC_DIR)/%.c,$(OBJ_DIR)/external/%.o,$(EXTERNAL_SOURCES))
+SRC_OBJECTS := $(LOCAL_OBJECTS) $(EXTERNAL_OBJECTS)
+SRC_DEPS := $(patsubst %.o,%.d,$(SRC_OBJECTS))
 
 TEST_SOURCES := $(shell find $(TEST_DIR) -name '*.c')
 TEST_OBJECTS := $(patsubst %.c,$(OBJ_DIR)/%.o,$(TEST_SOURCES))
@@ -71,6 +73,11 @@ DFLAGS ?= -MMD -MP
 $(OBJ_DIR)/%.o: %.c
 	mkdir -p $(@D)
 	$(CCWRAP) $(CPPFLAGS) $(CFLAGS) $(DFLAGS) -c $< -o $@
+
+# Rule for external sources. Compiling external source files into object files.
+$(OBJ_DIR)/external/%.o: $(UTINC_DIR)/%.c
+	mkdir -p $(@D)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(DFLAGS) -c $< -o $@
 
 # Rules for building the final binaries. Linking object files into executables.
 # $(MAIN_TARGET): $(MAIN_OBJECT) $(SRC_OBJECTS)

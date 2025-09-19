@@ -64,6 +64,12 @@
 #error "LINC_DEFAULT_MAX_MESSAGE_LENGTH must be at least 1"
 #endif
 
+#if !defined(LINC_DEFAULT_RING_BUFFER_SIZE)
+#define LINC_DEFAULT_RING_BUFFER_SIZE 1024  // Default size for the ring buffer
+#elif (LINC_DEFAULT_RING_BUFFER_SIZE < 1)
+#error "LINC_DEFAULT_RING_BUFFER_SIZE must be at least 1"
+#endif
+
 #define LINC_ZERO_CHAR_LENGTH 1     // Zero character length
 #define LINC_NEWLINE_CHAR_LENGTH 1  // Newline character length
 
@@ -72,13 +78,12 @@
 // ==================================================
 
 enum linc_level {
-    LINC_LEVEL_INHERIT = -1,  // Inherit level from parent (used internally)
-    LINC_LEVEL_TRACE = 0,     // Lowest level, for detailed debugging information
-    LINC_LEVEL_DEBUG = 1,     // Debugging information, useful for developers
-    LINC_LEVEL_INFO = 2,      // General information about application state
-    LINC_LEVEL_WARN = 3,      // Warning messages, indicating potential issues
-    LINC_LEVEL_ERROR = 4,     // Error messages, indicating something went wrong
-    LINC_LEVEL_FATAL = 5,     // Critical errors that cause the application to terminate
+    LINC_LEVEL_TRACE = 0,  // Lowest level, for detailed debugging information
+    LINC_LEVEL_DEBUG = 1,  // Debugging information, useful for developers
+    LINC_LEVEL_INFO = 2,   // General information about application state
+    LINC_LEVEL_WARN = 3,   // Warning messages, indicating potential issues
+    LINC_LEVEL_ERROR = 4,  // Error messages, indicating something went wrong
+    LINC_LEVEL_FATAL = 5,  // Critical errors that cause the application to terminate
 };
 
 struct linc_metadata {
@@ -118,12 +123,12 @@ void linc_log(linc_module module,
               const char *format,
               ...) LINC_PRINT_FMT(6, 7);
 
-#define TRACE(...) linc_log(NULL, LINC_LEVEL_TRACE, __FILE__, __LINE__, __func__, __VA_ARGS__)
-#define DEBUG(...) linc_log(NULL, LINC_LEVEL_DEBUG, __FILE__, __LINE__, __func__, __VA_ARGS__)
-#define INFO(...) linc_log(NULL, LINC_LEVEL_INFO, __FILE__, __LINE__, __func__, __VA_ARGS__)
-#define WARN(...) linc_log(NULL, LINC_LEVEL_WARN, __FILE__, __LINE__, __func__, __VA_ARGS__)
-#define ERROR(...) linc_log(NULL, LINC_LEVEL_ERROR, __FILE__, __LINE__, __func__, __VA_ARGS__)
-#define FATAL(...) linc_log(NULL, LINC_LEVEL_FATAL, __FILE__, __LINE__, __func__, __VA_ARGS__)
+#define TRACE(...) linc_log(linc_default_module, LINC_LEVEL_TRACE, __FILE__, __LINE__, __func__, __VA_ARGS__)
+#define DEBUG(...) linc_log(linc_default_module, LINC_LEVEL_DEBUG, __FILE__, __LINE__, __func__, __VA_ARGS__)
+#define INFO(...) linc_log(linc_default_module, LINC_LEVEL_INFO, __FILE__, __LINE__, __func__, __VA_ARGS__)
+#define WARN(...) linc_log(linc_default_module, LINC_LEVEL_WARN, __FILE__, __LINE__, __func__, __VA_ARGS__)
+#define ERROR(...) linc_log(linc_default_module, LINC_LEVEL_ERROR, __FILE__, __LINE__, __func__, __VA_ARGS__)
+#define FATAL(...) linc_log(linc_default_module, LINC_LEVEL_FATAL, __FILE__, __LINE__, __func__, __VA_ARGS__)
 
 #define TRACE_M(module, ...) linc_log(module, LINC_LEVEL_TRACE, __FILE__, __LINE__, __func__, __VA_ARGS__)
 #define DEBUG_M(module, ...) linc_log(module, LINC_LEVEL_DEBUG, __FILE__, __LINE__, __func__, __VA_ARGS__)
@@ -131,8 +136,6 @@ void linc_log(linc_module module,
 #define WARN_M(module, ...) linc_log(module, LINC_LEVEL_WARN, __FILE__, __LINE__, __func__, __VA_ARGS__)
 #define ERROR_M(module, ...) linc_log(module, LINC_LEVEL_ERROR, __FILE__, __LINE__, __func__, __VA_ARGS__)
 #define FATAL_M(module, ...) linc_log(module, LINC_LEVEL_FATAL, __FILE__, __LINE__, __func__, __VA_ARGS__)
-
-int linc_set_level(enum linc_level level);
 
 linc_module linc_register_module(const char *name, enum linc_level level, bool enabled);
 linc_sink linc_register_sink(const char *name, enum linc_level level, bool enabled, struct linc_sink_funcs funcs);

@@ -3,6 +3,8 @@
 
 #include "linc.h"
 
+#include <pthread.h>
+
 // ==================================================
 // Structures and Enums
 // ==================================================
@@ -11,11 +13,13 @@ struct linc_module {
     char name[LINC_DEFAULT_MODULE_NAME_LENGTH + LINC_ZERO_CHAR_LENGTH];  // Module name
     enum linc_level level;                                               // Minimum log level for this module
     bool enabled;                                                        // Is module enabled
+    pthread_rwlock_t lock;                                               // Lock for thread safety
 };
 
 struct linc_module_list {
     struct linc_module list[LINC_DEFAULT_MAX_MODULES];  // List of registered modules
     size_t count;                                       // Number of registered modules
+    pthread_mutex_t mutex;                              // Mutex for thread safety
 };
 
 // ==================================================
