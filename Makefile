@@ -77,7 +77,7 @@ $(OBJ_DIR)/%.o: %.c
 # Rule for external sources. Compiling external source files into object files.
 $(OBJ_DIR)/external/%.o: $(UTINC_DIR)/%.c
 	mkdir -p $(@D)
-	$(CC) $(CPPFLAGS) $(CFLAGS) $(DFLAGS) -c $< -o $@
+	$(CCWRAP) $(CPPFLAGS) $(CFLAGS) $(DFLAGS) -c $< -o $@
 
 # Rules for building the final binaries. Linking object files into executables.
 # $(MAIN_TARGET): $(MAIN_OBJECT) $(SRC_OBJECTS)
